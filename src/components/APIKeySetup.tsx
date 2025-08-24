@@ -1,0 +1,106 @@
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Eye, EyeOff, Key } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+interface APIKeySetupProps {
+  onSetup: (apiKey: string) => void;
+  apiKey?: string;
+}
+
+export const APIKeySetup = ({ onSetup, apiKey }: APIKeySetupProps) => {
+  const [inputApiKey, setInputApiKey] = useState(apiKey || '');
+  const [showKey, setShowKey] = useState(false);
+  const { toast } = useToast();
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputApiKey.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter your OpenAI API key",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!inputApiKey.startsWith('sk-')) {
+      toast({
+        title: "Invalid API Key",
+        description: "OpenAI API keys should start with 'sk-'",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    onSetup(inputApiKey);
+    toast({
+      title: "Success",
+      description: "API key configured successfully",
+    });
+  };
+
+  return (
+    <Card className="w-full max-w-md mx-auto shadow-medium">
+      <CardHeader className="text-center">
+        <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mx-auto mb-4">
+          <Key className="w-6 h-6 text-primary-foreground" />
+        </div>
+        <CardTitle>OpenAI API Configuration</CardTitle>
+        <CardDescription>
+          Enter your OpenAI API key to enable OCR and intelligent marking capabilities
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="apiKey">API Key</Label>
+            <div className="relative">
+              <Input
+                id="apiKey"
+                type={showKey ? "text" : "password"}
+                value={inputApiKey}
+                onChange={(e) => setInputApiKey(e.target.value)}
+                placeholder="sk-..."
+                className="pr-10"
+                required
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                onClick={() => setShowKey(!showKey)}
+              >
+                {showKey ? (
+                  <EyeOff className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <Eye className="w-4 h-4 text-muted-foreground" />
+                )}
+              </Button>
+            </div>
+          </div>
+          <Button type="submit" className="w-full">
+            {apiKey ? 'Update API Key' : 'Set API Key'}
+          </Button>
+        </form>
+        <div className="mt-4 p-3 bg-muted rounded-lg">
+          <p className="text-sm text-muted-foreground">
+            Your API key is stored locally and never shared. Get your API key from{' '}
+            <a 
+              href="https://platform.openai.com/api-keys" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-primary hover:underline"
+            >
+              OpenAI Dashboard
+            </a>
+          </p>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
