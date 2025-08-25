@@ -3,7 +3,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
-import { FileText, Download, CheckCircle, AlertTriangle, XCircle } from 'lucide-react';
+import { FileText, Download, CheckCircle, AlertTriangle, XCircle, FileDown } from 'lucide-react';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface MarkingResult {
   question: string;
@@ -66,6 +68,128 @@ export const MarkingResults = ({
     URL.revokeObjectURL(url);
   };
 
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    const margin = 20;
+    const lineHeight = 7;
+    let yPosition = margin;
+
+    // Title and Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Student Assessment Report', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 15;
+
+    // Overall Score Section
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Overall Score', margin, yPosition);
+    yPosition += 10;
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total Score: ${totalMarks}/${maxTotalMarks} (${percentage}%)`, margin, yPosition);
+    yPosition += lineHeight;
+    doc.text(`Grade: ${gradeInfo.grade}`, margin, yPosition);
+    yPosition += 10;
+
+    // Overall Feedback
+    if (overallFeedback) {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Overall Feedback:', margin, yPosition);
+      yPosition += lineHeight;
+      
+      doc.setFont('helvetica', 'normal');
+      const feedbackLines = doc.splitTextToSize(overallFeedback, pageWidth - 2 * margin);
+      doc.text(feedbackLines, margin, yPosition);
+      yPosition += feedbackLines.length * lineHeight + 10;
+    }
+
+    // Question Results
+    results.forEach((result, index) => {
+      // Check if we need a new page
+      if (yPosition > doc.internal.pageSize.height - 60) {
+        doc.addPage();
+        yPosition = margin;
+      }
+
+      // Question Header
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Question ${index + 1}`, margin, yPosition);
+      doc.text(`${result.awardedMarks}/${result.maxMarks} marks`, pageWidth - margin, yPosition, { align: 'right' });
+      yPosition += 8;
+
+      // Question Text
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      const questionLines = doc.splitTextToSize(result.question, pageWidth - 2 * margin);
+      doc.text(questionLines, margin, yPosition);
+      yPosition += questionLines.length * lineHeight + 5;
+
+      // Student Answer
+      doc.setFont('helvetica', 'bold');
+      doc.text('Your Answer:', margin, yPosition);
+      yPosition += lineHeight;
+      
+      doc.setFont('helvetica', 'normal');
+      const answerLines = doc.splitTextToSize(result.studentAnswer, pageWidth - 2 * margin);
+      doc.text(answerLines, margin, yPosition);
+      yPosition += answerLines.length * lineHeight + 5;
+
+      // Feedback
+      if (result.feedback) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Feedback:', margin, yPosition);
+        yPosition += lineHeight;
+        
+        doc.setFont('helvetica', 'normal');
+        const feedbackLines = doc.splitTextToSize(result.feedback, pageWidth - 2 * margin);
+        doc.text(feedbackLines, margin, yPosition);
+        yPosition += feedbackLines.length * lineHeight + 5;
+      }
+
+      // Strengths
+      if (result.strengths.length > 0) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('✓ Strengths:', margin, yPosition);
+        yPosition += lineHeight;
+        
+        doc.setFont('helvetica', 'normal');
+        result.strengths.forEach(strength => {
+          const strengthLines = doc.splitTextToSize(`• ${strength}`, pageWidth - 2 * margin - 10);
+          doc.text(strengthLines, margin + 5, yPosition);
+          yPosition += strengthLines.length * lineHeight;
+        });
+        yPosition += 3;
+      }
+
+      // Areas for Improvement
+      if (result.improvements.length > 0) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('⚠ Areas for Improvement:', margin, yPosition);
+        yPosition += lineHeight;
+        
+        doc.setFont('helvetica', 'normal');
+        result.improvements.forEach(improvement => {
+          const improvementLines = doc.splitTextToSize(`• ${improvement}`, pageWidth - 2 * margin - 10);
+          doc.text(improvementLines, margin + 5, yPosition);
+          yPosition += improvementLines.length * lineHeight;
+        });
+        yPosition += 3;
+      }
+
+      // Add separator line
+      doc.setDrawColor(200, 200, 200);
+      doc.line(margin, yPosition, pageWidth - margin, yPosition);
+      yPosition += 10;
+    });
+
+    // Save the PDF
+    doc.save(`student-assessment-${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
+
   return (
     <div className="space-y-6">
       {/* Overall Score Card */}
@@ -91,10 +215,16 @@ export const MarkingResults = ({
               <h3 className="font-medium mb-2">Overall Feedback</h3>
               <p className="text-muted-foreground">{overallFeedback}</p>
             </div>
-            <Button onClick={exportResults} className="w-full" variant="outline">
-              <Download className="w-4 h-4 mr-2" />
-              Export Results
-            </Button>
+            <div className="grid grid-cols-2 gap-3">
+              <Button onClick={exportToPDF} className="w-full" variant="default">
+                <FileDown className="w-4 h-4 mr-2" />
+                Download PDF
+              </Button>
+              <Button onClick={exportResults} className="w-full" variant="outline">
+                <Download className="w-4 h-4 mr-2" />
+                Export Data
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
