@@ -208,15 +208,15 @@ const Index = () => {
       <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-primary-foreground" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
+                  <GraduationCap className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold">Magic Marking AI Tool</h1>
+                  <p className="text-sm text-muted-foreground">AI-powered handwriting analysis and marking</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold">Teacher's Marking Assistant</h1>
-                <p className="text-sm text-muted-foreground">AI-powered handwriting analysis and marking</p>
-              </div>
-            </div>
             <Button 
               variant="outline" 
               size="sm" 
@@ -231,6 +231,29 @@ const Index = () => {
 
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-8">
+          {/* Privacy Principles */}
+          <div className="bg-muted/30 border border-primary/20 rounded-lg p-6 mb-8">
+            <h2 className="text-lg font-semibold mb-4 text-primary">Privacy & Security Commitment</h2>
+            <div className="grid md:grid-cols-2 gap-4 text-sm text-muted-foreground">
+              <div>
+                <h3 className="font-medium text-foreground mb-2">🔒 Data Protection</h3>
+                <p>Your API key is stored locally in your browser and never transmitted to our servers.</p>
+              </div>
+              <div>
+                <h3 className="font-medium text-foreground mb-2">🤖 AI Processing</h3>
+                <p>Student work is processed directly through OpenAI's secure API with enterprise-grade encryption.</p>
+              </div>
+              <div>
+                <h3 className="font-medium text-foreground mb-2">📝 No Data Storage</h3>
+                <p>We don't store, save, or retain any uploaded images or marking results on our servers.</p>
+              </div>
+              <div>
+                <h3 className="font-medium text-foreground mb-2">🛡️ Your Control</h3>
+                <p>You have complete control over your data - remove your API key anytime to disconnect the service.</p>
+              </div>
+            </div>
+          </div>
+
           {/* File Upload */}
           <FileUpload 
             onFileSelect={handleFileSelect} 
@@ -296,6 +319,30 @@ const Index = () => {
             />
           )}
         </div>
+        
+        {/* Footer */}
+        <footer className="mt-16 border-t pt-8">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <span className="text-sm text-muted-foreground">Proudly made by</span>
+              <a 
+                href="https://clarence.guru" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition-opacity"
+              >
+                <img 
+                  src="/lovable-uploads/7e0b4f13-f26e-4a45-b777-fdda229a575e.png" 
+                  alt="Clarence's Solutions" 
+                  className="h-8 w-auto"
+                />
+              </a>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Magic Marking AI Tool - Empowering educators with intelligent assessment technology
+            </p>
+          </div>
+        </footer>
       </main>
     </div>
   );
