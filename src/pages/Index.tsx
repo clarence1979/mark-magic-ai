@@ -21,7 +21,8 @@ const Index = () => {
     localStorage.getItem('openai_api_key') || ''
   );
   const [showSetup, setShowSetup] = useState(false);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [currentFileIndex, setCurrentFileIndex] = useState<number | null>(null);
   const [ocrText, setOcrText] = useState<string>('');
   const [markingScheme, setMarkingScheme] = useState<string>('');
   const [isSchemeGenerated, setIsSchemeGenerated] = useState(false);
@@ -59,8 +60,24 @@ const Index = () => {
     });
   };
 
-  const handleFileSelect = async (file: File) => {
-    setSelectedFile(file);
+  const handleFilesSelect = (files: File[]) => {
+    setSelectedFiles(files);
+    setOcrText('');
+    setMarkingResults(null);
+    setCurrentFileIndex(null);
+    // Reset processing steps
+    setProcessingSteps([
+      { id: 'ocr', label: 'Extracting text from image', status: 'pending' },
+      { id: 'scheme', label: 'Processing marking scheme', status: 'pending' },
+      { id: 'marking', label: 'Marking student work', status: 'pending' },
+    ]);
+  };
+
+  const processFile = async (fileIndex: number) => {
+    const file = selectedFiles[fileIndex];
+    if (!file) return;
+    
+    setCurrentFileIndex(fileIndex);
     setOcrText('');
     setMarkingResults(null);
     
@@ -256,9 +273,48 @@ const Index = () => {
 
           {/* File Upload */}
           <FileUpload 
-            onFileSelect={handleFileSelect} 
+            onFilesSelect={handleFilesSelect} 
             disabled={isProcessing}
           />
+
+          {/* Selected Files List */}
+          {selectedFiles.length > 0 && !markingResults && (
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle>Selected Files ({selectedFiles.length})</CardTitle>
+                <CardDescription>
+                  Choose a file to process for OCR and marking
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {selectedFiles.map((file, index) => (
+                    <div key={`${file.name}-${index}`} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-primary/10 rounded flex items-center justify-center">
+                          <span className="text-xs font-medium text-primary">{index + 1}</span>
+                        </div>
+                        <div>
+                          <p className="font-medium">{file.name}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {(file.size / 1024 / 1024).toFixed(2)} MB • {file.type.split('/')[1]?.toUpperCase()}
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        onClick={() => processFile(index)}
+                        disabled={isProcessing}
+                        size="sm"
+                        variant={currentFileIndex === index ? "default" : "outline"}
+                      >
+                        {currentFileIndex === index && isProcessing ? 'Processing...' : 'Process'}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Processing Status */}
           {(ocrText || isProcessing) && (
