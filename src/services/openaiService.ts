@@ -166,12 +166,14 @@ ${markingScheme}
 STUDENT WORK:
 ${ocrText}
 
+Please identify and extract the ACTUAL questions from the student work (e.g., "a. Show three different ways...", "b. Which packages would you buy...", etc.) and the student's specific answers to each question.
+
 Please provide your response in the following JSON format:
 {
   "results": [
     {
-      "question": "Question title/description",
-      "studentAnswer": "The student's answer for this question",
+      "question": "The EXACT question text from the student work (e.g., 'a. Show three different ways you could buy packages to get at least 40 buns.')",
+      "studentAnswer": "The student's actual written answer to this specific question",
       "maxMarks": number,
       "awardedMarks": number,
       "feedback": "Detailed feedback explaining the marks awarded",
