@@ -71,14 +71,31 @@ export const MarkingResults = ({
   const exportToPDF = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
+    const pageHeight = doc.internal.pageSize.height;
     const margin = 20;
     const lineHeight = 7;
     let yPosition = margin;
+
+    // Helper function to check and add new page if needed
+    const checkAddPage = (requiredSpace = 40) => {
+      if (yPosition + requiredSpace > pageHeight - margin) {
+        doc.addPage();
+        yPosition = margin;
+        return true;
+      }
+      return false;
+    };
 
     // Title and Header
     doc.setFontSize(20);
     doc.setFont('helvetica', 'bold');
     doc.text('Student Assessment Report', pageWidth / 2, yPosition, { align: 'center' });
+    yPosition += 15;
+
+    // Date
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 15;
 
     // Overall Score Section
@@ -92,98 +109,112 @@ export const MarkingResults = ({
     doc.text(`Total Score: ${totalMarks}/${maxTotalMarks} (${percentage}%)`, margin, yPosition);
     yPosition += lineHeight;
     doc.text(`Grade: ${gradeInfo.grade}`, margin, yPosition);
-    yPosition += 10;
+    yPosition += 15;
 
     // Overall Feedback
     if (overallFeedback) {
+      checkAddPage(30);
       doc.setFont('helvetica', 'bold');
       doc.text('Overall Feedback:', margin, yPosition);
-      yPosition += lineHeight;
+      yPosition += lineHeight + 2;
       
       doc.setFont('helvetica', 'normal');
       const feedbackLines = doc.splitTextToSize(overallFeedback, pageWidth - 2 * margin);
       doc.text(feedbackLines, margin, yPosition);
-      yPosition += feedbackLines.length * lineHeight + 10;
+      yPosition += feedbackLines.length * lineHeight + 15;
     }
 
     // Question Results
     results.forEach((result, index) => {
-      // Check if we need a new page
-      if (yPosition > doc.internal.pageSize.height - 60) {
-        doc.addPage();
-        yPosition = margin;
-      }
+      // Estimate space needed for this question
+      const estimatedSpace = 80; // Base space for headers and structure
+      checkAddPage(estimatedSpace);
 
       // Question Header
-      doc.setFontSize(14);
+      doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
       doc.text(`Question ${index + 1}`, margin, yPosition);
       doc.text(`${result.awardedMarks}/${result.maxMarks} marks`, pageWidth - margin, yPosition, { align: 'right' });
-      yPosition += 8;
+      yPosition += 12;
 
       // Question Text
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      const questionLines = doc.splitTextToSize(result.question, pageWidth - 2 * margin);
-      doc.text(questionLines, margin, yPosition);
-      yPosition += questionLines.length * lineHeight + 5;
+      if (result.question) {
+        doc.setFontSize(12);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Question:', margin, yPosition);
+        yPosition += lineHeight + 2;
+        
+        doc.setFont('helvetica', 'normal');
+        const questionLines = doc.splitTextToSize(result.question, pageWidth - 2 * margin);
+        doc.text(questionLines, margin, yPosition);
+        yPosition += questionLines.length * lineHeight + 8;
+      }
 
       // Student Answer
+      checkAddPage(20);
       doc.setFont('helvetica', 'bold');
       doc.text('Your Answer:', margin, yPosition);
-      yPosition += lineHeight;
+      yPosition += lineHeight + 2;
       
       doc.setFont('helvetica', 'normal');
       const answerLines = doc.splitTextToSize(result.studentAnswer, pageWidth - 2 * margin);
       doc.text(answerLines, margin, yPosition);
-      yPosition += answerLines.length * lineHeight + 5;
+      yPosition += answerLines.length * lineHeight + 8;
 
       // Feedback
       if (result.feedback) {
+        checkAddPage(20);
         doc.setFont('helvetica', 'bold');
         doc.text('Feedback:', margin, yPosition);
-        yPosition += lineHeight;
+        yPosition += lineHeight + 2;
         
         doc.setFont('helvetica', 'normal');
         const feedbackLines = doc.splitTextToSize(result.feedback, pageWidth - 2 * margin);
         doc.text(feedbackLines, margin, yPosition);
-        yPosition += feedbackLines.length * lineHeight + 5;
+        yPosition += feedbackLines.length * lineHeight + 8;
       }
 
       // Strengths
       if (result.strengths.length > 0) {
+        checkAddPage(15);
         doc.setFont('helvetica', 'bold');
         doc.text('✓ Strengths:', margin, yPosition);
-        yPosition += lineHeight;
+        yPosition += lineHeight + 2;
         
         doc.setFont('helvetica', 'normal');
         result.strengths.forEach(strength => {
+          checkAddPage(10);
           const strengthLines = doc.splitTextToSize(`• ${strength}`, pageWidth - 2 * margin - 10);
           doc.text(strengthLines, margin + 5, yPosition);
-          yPosition += strengthLines.length * lineHeight;
+          yPosition += strengthLines.length * lineHeight + 2;
         });
-        yPosition += 3;
+        yPosition += 5;
       }
 
       // Areas for Improvement
       if (result.improvements.length > 0) {
+        checkAddPage(15);
         doc.setFont('helvetica', 'bold');
         doc.text('⚠ Areas for Improvement:', margin, yPosition);
-        yPosition += lineHeight;
+        yPosition += lineHeight + 2;
         
         doc.setFont('helvetica', 'normal');
         result.improvements.forEach(improvement => {
+          checkAddPage(10);
           const improvementLines = doc.splitTextToSize(`• ${improvement}`, pageWidth - 2 * margin - 10);
           doc.text(improvementLines, margin + 5, yPosition);
-          yPosition += improvementLines.length * lineHeight;
+          yPosition += improvementLines.length * lineHeight + 2;
         });
-        yPosition += 3;
+        yPosition += 5;
       }
 
-      // Add separator line
-      doc.setDrawColor(200, 200, 200);
-      doc.line(margin, yPosition, pageWidth - margin, yPosition);
-      yPosition += 10;
+      // Add separator line if not the last question
+      if (index < results.length - 1) {
+        checkAddPage(15);
+        doc.setDrawColor(200, 200, 200);
+        doc.line(margin, yPosition, pageWidth - margin, yPosition);
+        yPosition += 15;
+      }
     });
 
     // Save the PDF
