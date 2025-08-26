@@ -91,28 +91,29 @@ export class OpenAIService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4',
+          model: 'gpt-5-2025-08-07',
           messages: [
             {
               role: 'system',
-              content: 'You are an expert educator. Analyze the student work and create a comprehensive marking scheme.'
+              content: 'You are an experienced educator who creates fair and appropriate marking schemes. Keep marking simple and proportional to question complexity.'
             },
             {
               role: 'user',
-              content: `Please analyze this student work and generate a detailed marking scheme:
+              content: `Analyze this student work and create a concise, fair marking scheme:
 
 ${ocrText}
 
-Create a marking scheme that includes:
-1. Clear questions/topics identified in the work
-2. Point allocation for each section
-3. Key concepts that should be present
-4. Specific criteria for awarding marks
+Guidelines for marking scheme:
+1. Simple calculation/method questions should have 2-4 marks maximum
+2. Allocate marks proportionally to question complexity
+3. Focus on core mathematical concepts and correct methodology
+4. Be clear about what constitutes full marks vs partial marks
+5. Avoid over-complicating simple questions
 
-Format the scheme clearly with bullet points and be specific about what constitutes full marks, partial marks, etc.`
+Format as clear bullet points with specific mark allocations and criteria.`
             }
           ],
-          max_tokens: 2000
+          max_tokens: 1500
         })
       });
 
@@ -150,15 +151,15 @@ Format the scheme clearly with bullet points and be specific about what constitu
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4',
+          model: 'gpt-5-2025-08-07',
           messages: [
             {
               role: 'system',
-              content: 'You are an expert teacher marking student work. Be fair, constructive, and detailed in your marking. Always provide specific feedback and suggestions for improvement.'
+              content: 'You are an experienced mathematics teacher who marks student work fairly and accurately. You understand mathematical terminology precisely (e.g., "at least 40" means 40 or more). You give full credit when students demonstrate correct mathematical understanding and methodology, even if presentation could be improved.'
             },
             {
               role: 'user',
-              content: `Please mark this student work according to the marking scheme provided.
+              content: `Mark this student work according to the marking scheme provided.
 
 MARKING SCHEME:
 ${markingScheme}
@@ -166,27 +167,33 @@ ${markingScheme}
 STUDENT WORK:
 ${ocrText}
 
-Please identify and extract the ACTUAL questions from the student work (e.g., "a. Show three different ways...", "b. Which packages would you buy...", etc.) and the student's specific answers to each question.
+CRITICAL MARKING GUIDELINES:
+1. Mathematical correctness is paramount - if the math is right, award full marks
+2. "At least X" means X or any number greater than X
+3. Multiple correct methods should receive full credit
+4. Focus on mathematical understanding over presentation
+5. Be generous with marks when core concepts are demonstrated correctly
+6. Double-check all mathematical calculations before awarding marks
 
-Please provide your response in the following JSON format:
+Extract the ACTUAL questions and student answers, then provide response in this JSON format:
 {
   "results": [
     {
-      "question": "The EXACT question text from the student work (e.g., 'a. Show three different ways you could buy packages to get at least 40 buns.')",
-      "studentAnswer": "The student's actual written answer to this specific question",
+      "question": "The EXACT question text from student work",
+      "studentAnswer": "Student's actual written answer",
       "maxMarks": number,
       "awardedMarks": number,
-      "feedback": "Detailed feedback explaining the marks awarded",
-      "strengths": ["List of strengths in the answer"],
-      "improvements": ["List of areas for improvement"]
+      "feedback": "Clear explanation of marks awarded",
+      "strengths": ["What the student did well"],
+      "improvements": ["Specific areas to improve - only if genuinely needed"]
     }
   ],
-  "totalMarks": total_awarded_marks,
-  "maxTotalMarks": total_possible_marks,
-  "overallFeedback": "Overall summary and encouragement for the student"
+  "totalMarks": sum_of_all_awarded_marks,
+  "maxTotalMarks": sum_of_all_max_marks,
+  "overallFeedback": "Encouraging summary focusing on mathematical strengths"
 }
 
-Be thorough and constructive in your feedback. Focus on what the student did well and provide specific guidance for improvement.`
+Ensure totalMarks correctly sums all individual awarded marks.`
             }
           ],
           max_tokens: 3000
