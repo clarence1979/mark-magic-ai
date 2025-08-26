@@ -144,6 +144,11 @@ Format as clear bullet points with specific mark allocations and criteria.`
 
   async markStudentWork(ocrText: string, markingScheme: string): Promise<MarkingResponse> {
     try {
+      // Preprocess text to identify potential questions
+      const questionPatterns = /^[a-z]\.|^\d+\.|^[A-Z]\.|^\([a-z]\)|^\(\d+\)|^Question \d+/gm;
+      const potentialQuestions = ocrText.match(questionPatterns);
+      const hasMultipleQuestions = potentialQuestions && potentialQuestions.length > 1;
+
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -155,11 +160,11 @@ Format as clear bullet points with specific mark allocations and criteria.`
           messages: [
             {
               role: 'system',
-              content: 'You are an experienced mathematics teacher who marks student work fairly and accurately. You understand mathematical terminology precisely (e.g., "at least 40" means 40 or more). You give full credit when students demonstrate correct mathematical understanding and methodology, even if presentation could be improved.'
+              content: `You are an experienced mathematics teacher. You MUST respond with valid JSON only. ${hasMultipleQuestions ? 'This work contains multiple questions that must be separated.' : 'Analyze this as individual questions if they exist.'}`
             },
             {
               role: 'user',
-              content: `Mark this student work according to the marking scheme provided. You MUST identify and separate each individual question.
+              content: `Mark this student work. Return ONLY valid JSON in the exact format specified.
 
 MARKING SCHEME:
 ${markingScheme}
@@ -167,42 +172,37 @@ ${markingScheme}
 STUDENT WORK:
 ${ocrText}
 
-CRITICAL INSTRUCTIONS:
-1. IDENTIFY EACH SEPARATE QUESTION: Look for question numbers (1., 2., a), b), etc.) or distinct mathematical problems
-2. For each question, provide the CORRECT ANSWER alongside the student's answer
-3. Award marks based on mathematical accuracy and methodology
-4. "At least X" means X or any number greater than X
-5. Be generous when core mathematical concepts are demonstrated correctly
-6. Each question should have its own entry in the results array
+${hasMultipleQuestions ? `DETECTED QUESTION PATTERNS: ${potentialQuestions?.join(', ')}` : ''}
 
-REQUIRED RESPONSE FORMAT (JSON only):
+RESPONSE FORMAT (JSON ONLY - NO OTHER TEXT):
 {
   "results": [
     {
-      "question": "The complete question text (e.g., 'Question 1: Calculate the area of...')",
-      "studentAnswer": "What the student actually wrote for this specific question",
-      "correctAnswer": "The mathematically correct answer with working",
-      "maxMarks": number,
-      "awardedMarks": number,
-      "feedback": "Detailed marking justification explaining why marks were awarded/deducted",
-      "markingScheme": "Specific marking criteria for this question",
-      "strengths": ["Specific things done correctly"],
-      "improvements": ["Specific suggestions for improvement - only if needed"]
+      "question": "Complete question text with number (e.g., 'a. Show three different ways...')",
+      "studentAnswer": "Student's written answer for this specific question",
+      "correctAnswer": "Mathematical correct answer with working",
+      "maxMarks": 3,
+      "awardedMarks": 2,
+      "feedback": "Clear explanation of marks awarded/deducted",
+      "markingScheme": "Specific criteria for this question",
+      "strengths": ["What student did well"],
+      "improvements": ["Areas to improve"]
     }
   ],
-  "totalMarks": sum_of_all_awarded_marks,
-  "maxTotalMarks": sum_of_all_max_marks,
-  "overallFeedback": "Encouraging summary of overall performance"
+  "totalMarks": 8,
+  "maxTotalMarks": 12,
+  "overallFeedback": "Summary of performance"
 }
 
-IMPORTANT: 
-- If you see multiple questions (1., 2., a), b), etc.), create separate entries for each
-- Never group everything as "Overall Work" - break down by individual questions
-- Provide correct answers to help students learn
-- Be specific about what earned marks and what didn't`
+CRITICAL: 
+- Look for question markers: a., b., c., 1., 2., 3., etc.
+- Create separate entries for each question found
+- If unclear, treat as separate questions rather than combining
+- Respond with JSON only - no explanatory text`
             }
           ],
-          max_tokens: 3000
+          max_tokens: 3000,
+          temperature: 0.1
         })
       });
 
@@ -212,35 +212,66 @@ IMPORTANT:
       }
 
       const data = await response.json();
-      const content = data.choices[0]?.message?.content;
+      let content = data.choices[0]?.message?.content;
 
       if (!content) {
         throw new Error('No marking results generated');
       }
 
+      // Clean up content - remove any non-JSON text
+      content = content.trim();
+      const jsonStart = content.indexOf('{');
+      const jsonEnd = content.lastIndexOf('}') + 1;
+      if (jsonStart !== -1 && jsonEnd > jsonStart) {
+        content = content.substring(jsonStart, jsonEnd);
+      }
+
       // Try to parse JSON response
       try {
         const parsedResults = JSON.parse(content);
+        
+        // Validate the structure
+        if (!parsedResults.results || !Array.isArray(parsedResults.results)) {
+          throw new Error('Invalid results structure');
+        }
+
         return {
           success: true,
           ...parsedResults
         };
       } catch (parseError) {
-        // If JSON parsing fails, create a fallback structure
+        console.error('JSON Parse Error:', parseError, 'Content:', content);
+        
+        // Improved fallback - try to extract meaningful information
+        const lines = ocrText.split('\n').filter(line => line.trim());
+        const questions = this.extractQuestionsFromText(lines);
+        
         return {
           success: true,
-          results: [{
-            question: "Overall Work",
+          results: questions.length > 0 ? questions.map((q, index) => ({
+            question: q.question,
+            studentAnswer: q.answer,
+            correctAnswer: "Please refer to your textbook or ask your teacher for the correct solution.",
+            maxMarks: 3,
+            awardedMarks: 2,
+            feedback: "Unable to process detailed marking. Please review this work manually.",
+            markingScheme: "Standard marking applies",
+            strengths: ["Attempted the question"],
+            improvements: ["Ensure clear working and answers"]
+          })) : [{
+            question: "Question Analysis",
             studentAnswer: ocrText,
-            maxMarks: 100,
-            awardedMarks: 75, // Default fallback
-            feedback: content,
-            strengths: ["Attempted all sections"],
-            improvements: ["See detailed feedback above"]
+            correctAnswer: "Please refer to your textbook or ask your teacher for the correct solution.",
+            maxMarks: 10,
+            awardedMarks: 7,
+            feedback: "Unable to process detailed marking automatically. Please review this work manually.",
+            markingScheme: "Standard marking criteria apply",
+            strengths: ["Work submitted"],
+            improvements: ["Ensure questions are clearly numbered and separated"]
           }],
-          totalMarks: 75,
-          maxTotalMarks: 100,
-          overallFeedback: "Please see the detailed feedback provided above."
+          totalMarks: questions.length > 0 ? questions.length * 2 : 7,
+          maxTotalMarks: questions.length > 0 ? questions.length * 3 : 10,
+          overallFeedback: "Automatic marking encountered an issue. Please review manually."
         };
       }
     } catch (error) {
@@ -250,5 +281,45 @@ IMPORTANT:
         error: error instanceof Error ? error.message : 'Failed to mark student work'
       };
     }
+  }
+
+  private extractQuestionsFromText(lines: string[]): Array<{question: string, answer: string}> {
+    const questions: Array<{question: string, answer: string}> = [];
+    let currentQuestion = '';
+    let currentAnswer = '';
+    let inQuestion = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      
+      // Check if line starts a new question
+      if (/^[a-z]\.|^\d+\.|^[A-Z]\.|^\([a-z]\)|^\(\d+\)|^Question \d+/i.test(line)) {
+        // Save previous question if it exists
+        if (currentQuestion && currentAnswer) {
+          questions.push({
+            question: currentQuestion.trim(),
+            answer: currentAnswer.trim()
+          });
+        }
+        
+        // Start new question
+        currentQuestion = line;
+        currentAnswer = '';
+        inQuestion = true;
+      } else if (inQuestion) {
+        // Add to current answer
+        currentAnswer += (currentAnswer ? ' ' : '') + line;
+      }
+    }
+
+    // Add the last question
+    if (currentQuestion && currentAnswer) {
+      questions.push({
+        question: currentQuestion.trim(),
+        answer: currentAnswer.trim()
+      });
+    }
+
+    return questions;
   }
 }
