@@ -159,7 +159,7 @@ Format as clear bullet points with specific mark allocations and criteria.`
             },
             {
               role: 'user',
-              content: `Mark this student work according to the marking scheme provided.
+              content: `Mark this student work according to the marking scheme provided. You MUST identify and separate each individual question.
 
 MARKING SCHEME:
 ${markingScheme}
@@ -167,33 +167,39 @@ ${markingScheme}
 STUDENT WORK:
 ${ocrText}
 
-CRITICAL MARKING GUIDELINES:
-1. Mathematical correctness is paramount - if the math is right, award full marks
-2. "At least X" means X or any number greater than X
-3. Multiple correct methods should receive full credit
-4. Focus on mathematical understanding over presentation
-5. Be generous with marks when core concepts are demonstrated correctly
-6. Double-check all mathematical calculations before awarding marks
+CRITICAL INSTRUCTIONS:
+1. IDENTIFY EACH SEPARATE QUESTION: Look for question numbers (1., 2., a), b), etc.) or distinct mathematical problems
+2. For each question, provide the CORRECT ANSWER alongside the student's answer
+3. Award marks based on mathematical accuracy and methodology
+4. "At least X" means X or any number greater than X
+5. Be generous when core mathematical concepts are demonstrated correctly
+6. Each question should have its own entry in the results array
 
-Extract the ACTUAL questions and student answers, then provide response in this JSON format:
+REQUIRED RESPONSE FORMAT (JSON only):
 {
   "results": [
     {
-      "question": "The EXACT question text from student work",
-      "studentAnswer": "Student's actual written answer",
+      "question": "The complete question text (e.g., 'Question 1: Calculate the area of...')",
+      "studentAnswer": "What the student actually wrote for this specific question",
+      "correctAnswer": "The mathematically correct answer with working",
       "maxMarks": number,
       "awardedMarks": number,
-      "feedback": "Clear explanation of marks awarded",
-      "strengths": ["What the student did well"],
-      "improvements": ["Specific areas to improve - only if genuinely needed"]
+      "feedback": "Detailed marking justification explaining why marks were awarded/deducted",
+      "markingScheme": "Specific marking criteria for this question",
+      "strengths": ["Specific things done correctly"],
+      "improvements": ["Specific suggestions for improvement - only if needed"]
     }
   ],
   "totalMarks": sum_of_all_awarded_marks,
   "maxTotalMarks": sum_of_all_max_marks,
-  "overallFeedback": "Encouraging summary focusing on mathematical strengths"
+  "overallFeedback": "Encouraging summary of overall performance"
 }
 
-Ensure totalMarks correctly sums all individual awarded marks.`
+IMPORTANT: 
+- If you see multiple questions (1., 2., a), b), etc.), create separate entries for each
+- Never group everything as "Overall Work" - break down by individual questions
+- Provide correct answers to help students learn
+- Be specific about what earned marks and what didn't`
             }
           ],
           max_tokens: 3000

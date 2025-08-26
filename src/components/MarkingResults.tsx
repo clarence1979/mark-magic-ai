@@ -10,9 +10,11 @@ import autoTable from 'jspdf-autotable';
 interface MarkingResult {
   question: string;
   studentAnswer: string;
+  correctAnswer?: string;
   maxMarks: number;
   awardedMarks: number;
   feedback: string;
+  markingScheme?: string;
   strengths: string[];
   improvements: string[];
 }
@@ -161,17 +163,43 @@ export const MarkingResults = ({
       doc.text(answerLines, margin, yPosition);
       yPosition += answerLines.length * lineHeight + 8;
 
+      // Correct Answer
+      if (result.correctAnswer) {
+        checkAddPage(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Correct Answer:', margin, yPosition);
+        yPosition += lineHeight + 2;
+        
+        doc.setFont('helvetica', 'normal');
+        const correctLines = doc.splitTextToSize(result.correctAnswer, pageWidth - 2 * margin);
+        doc.text(correctLines, margin, yPosition);
+        yPosition += correctLines.length * lineHeight + 8;
+      }
+
       // Feedback
       if (result.feedback) {
         checkAddPage(20);
         doc.setFont('helvetica', 'bold');
-        doc.text('Feedback:', margin, yPosition);
+        doc.text('Feedback & Marking Justification:', margin, yPosition);
         yPosition += lineHeight + 2;
         
         doc.setFont('helvetica', 'normal');
         const feedbackLines = doc.splitTextToSize(result.feedback, pageWidth - 2 * margin);
         doc.text(feedbackLines, margin, yPosition);
         yPosition += feedbackLines.length * lineHeight + 8;
+      }
+
+      // Marking Scheme
+      if (result.markingScheme) {
+        checkAddPage(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Marking Scheme:', margin, yPosition);
+        yPosition += lineHeight + 2;
+        
+        doc.setFont('helvetica', 'normal');
+        const schemeLines = doc.splitTextToSize(result.markingScheme, pageWidth - 2 * margin);
+        doc.text(schemeLines, margin, yPosition);
+        yPosition += schemeLines.length * lineHeight + 8;
       }
 
       // Strengths
@@ -287,10 +315,24 @@ export const MarkingResults = ({
                   <p className="text-sm bg-muted p-3 rounded-lg">{result.studentAnswer}</p>
                 </div>
                 
+                {result.correctAnswer && (
+                  <div>
+                    <h4 className="font-medium mb-2 text-success">Correct Answer</h4>
+                    <p className="text-sm bg-success/5 border border-success/20 p-3 rounded-lg">{result.correctAnswer}</p>
+                  </div>
+                )}
+                
                 <div>
-                  <h4 className="font-medium mb-2">Feedback</h4>
+                  <h4 className="font-medium mb-2">Feedback & Marking Justification</h4>
                   <p className="text-sm text-muted-foreground">{result.feedback}</p>
                 </div>
+
+                {result.markingScheme && (
+                  <div>
+                    <h4 className="font-medium mb-2">Marking Scheme</h4>
+                    <p className="text-sm bg-muted/50 p-3 rounded-lg border-l-4 border-primary/30">{result.markingScheme}</p>
+                  </div>
+                )}
 
                 {(result.strengths.length > 0 || result.improvements.length > 0) && (
                   <>
