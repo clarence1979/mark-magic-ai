@@ -4,11 +4,14 @@ import { FileUpload } from '@/components/FileUpload';
 import { MarkingSchemeInput } from '@/components/MarkingSchemeInput';
 import { ProcessingStatus } from '@/components/ProcessingStatus';
 import { MarkingResults } from '@/components/MarkingResults';
+import { PrivacyPolicy } from '@/components/PrivacyPolicy';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GraduationCap, Settings } from 'lucide-react';
+import { GraduationCap, Settings, Upload, Zap, CheckCircle } from 'lucide-react';
 import { OpenAIService } from '@/services/openaiService';
 import { useToast } from '@/hooks/use-toast';
+import heroBackground from '@/assets/hero-background.jpg';
+import clarenceLogo from '@/assets/clarence-logo.png';
 
 interface ProcessingStep {
   id: string;
@@ -221,19 +224,39 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
-      {/* Header */}
-      <header className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-primary rounded-lg flex items-center justify-center">
-                  <GraduationCap className="w-6 h-6 text-primary-foreground" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold">Magic Marking AI Tool</h1>
-                  <p className="text-sm text-muted-foreground">AI-powered handwriting analysis and marking</p>
-                </div>
-              </div>
+      {/* Hero Section */}
+      <div 
+        className="relative min-h-[60vh] flex items-center justify-center bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${heroBackground})` }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-background/90"></div>
+        <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 bg-gradient-primary rounded-xl flex items-center justify-center shadow-lg">
+              <GraduationCap className="w-10 h-10 text-primary-foreground" />
+            </div>
+          </div>
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+            Magic Marking AI Tool
+          </h1>
+          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+            Transform handwritten student work into detailed assessments with AI-powered OCR and intelligent marking
+          </p>
+          <div className="grid md:grid-cols-3 gap-6 mb-8">
+            <div className="flex items-center gap-3 justify-center">
+              <Upload className="w-6 h-6 text-primary" />
+              <span className="text-foreground font-medium">Upload & Extract</span>
+            </div>
+            <div className="flex items-center gap-3 justify-center">
+              <Zap className="w-6 h-6 text-primary" />
+              <span className="text-foreground font-medium">AI Analysis</span>
+            </div>
+            <div className="flex items-center gap-3 justify-center">
+              <CheckCircle className="w-6 h-6 text-primary" />
+              <span className="text-foreground font-medium">Instant Results</span>
+            </div>
+          </div>
+          <div className="flex items-center justify-center gap-4">
             <Button 
               variant="outline" 
               size="sm" 
@@ -242,31 +265,60 @@ const Index = () => {
               <Settings className="w-4 h-4 mr-2" />
               API Settings
             </Button>
+            <PrivacyPolicy />
           </div>
         </div>
-      </header>
+      </div>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-12">
         <div className="max-w-4xl mx-auto space-y-8">
           {/* Privacy Principles */}
           <div className="bg-muted/30 border border-primary/20 rounded-lg p-6 mb-8">
-            <h2 className="text-lg font-semibold mb-4 text-primary">Privacy & Security Commitment</h2>
+            <h2 className="text-lg font-semibold mb-4 text-primary">How It Works</h2>
+            <div className="grid md:grid-cols-3 gap-6 text-sm">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Upload className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-medium text-foreground mb-2">1. Upload Student Work</h3>
+                <p className="text-muted-foreground">Upload handwritten assignments, tests, or homework as images, PDFs, or DOCX files. Use camera capture for quick photos.</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <Zap className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-medium text-foreground mb-2">2. AI Text Extraction</h3>
+                <p className="text-muted-foreground">Advanced OCR technology extracts text from handwriting with high accuracy, understanding mathematical notation and student responses.</p>
+              </div>
+              <div className="text-center">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <CheckCircle className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="font-medium text-foreground mb-2">3. Intelligent Marking</h3>
+                <p className="text-muted-foreground">Generate marking schemes automatically or use custom ones. Get detailed feedback, scores, and improvement suggestions for each student.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Privacy & Security */}
+          <div className="bg-muted/20 border border-muted rounded-lg p-6 mb-8">
+            <h2 className="text-lg font-semibold mb-4 text-foreground">🔒 Privacy & Security Commitment</h2>
             <div className="grid md:grid-cols-2 gap-4 text-sm text-muted-foreground">
               <div>
-                <h3 className="font-medium text-foreground mb-2">🔒 Data Protection</h3>
-                <p>Your API key is stored locally in your browser and never transmitted to our servers.</p>
+                <h3 className="font-medium text-foreground mb-2">Local Data Storage</h3>
+                <p>Your API key is stored securely in your browser and never sent to our servers.</p>
               </div>
               <div>
-                <h3 className="font-medium text-foreground mb-2">🤖 AI Processing</h3>
-                <p>Student work is processed directly through OpenAI's secure API with enterprise-grade encryption.</p>
+                <h3 className="font-medium text-foreground mb-2">Direct AI Processing</h3>
+                <p>Student work is processed directly through OpenAI's secure API with enterprise encryption.</p>
               </div>
               <div>
-                <h3 className="font-medium text-foreground mb-2">📝 No Data Storage</h3>
-                <p>We don't store, save, or retain any uploaded images or marking results on our servers.</p>
+                <h3 className="font-medium text-foreground mb-2">No Data Retention</h3>
+                <p>We don't store, save, or retain any uploaded images or marking results.</p>
               </div>
               <div>
-                <h3 className="font-medium text-foreground mb-2">🛡️ Your Control</h3>
-                <p>You have complete control over your data - remove your API key anytime to disconnect the service.</p>
+                <h3 className="font-medium text-foreground mb-2">Complete Control</h3>
+                <p>You maintain full control over your data - disconnect anytime by removing your API key.</p>
               </div>
             </div>
           </div>
@@ -380,7 +432,7 @@ const Index = () => {
         <footer className="mt-16 border-t pt-8">
           <div className="max-w-4xl mx-auto text-center">
             <div className="flex items-center justify-center gap-3 mb-4">
-              <span className="text-sm text-muted-foreground">Proudly made by</span>
+              <span className="text-sm text-muted-foreground">Proudly made by:</span>
               <a 
                 href="https://clarence.guru" 
                 target="_blank" 
@@ -388,15 +440,15 @@ const Index = () => {
                 className="hover:opacity-80 transition-opacity"
               >
                 <img 
-                  src="/lovable-uploads/7e0b4f13-f26e-4a45-b777-fdda229a575e.png" 
-                  alt="Clarence's Solutions" 
-                  className="h-8 w-auto"
+                  src={clarenceLogo} 
+                  alt="Clarence.guru" 
+                  className="h-12 w-12 rounded-lg object-cover shadow-md"
                 />
               </a>
             </div>
             
             {/* PayPal Donate Button */}
-            <div className="mb-4">
+            <div className="mb-6">
               <form action="https://www.paypal.com/donate" method="post" target="_top" className="inline-block">
                 <input type="hidden" name="hosted_button_id" value="PSXE6LDM3ZJDC" />
                 <input 
@@ -412,9 +464,14 @@ const Index = () => {
               </form>
             </div>
             
-            <p className="text-xs text-muted-foreground">
-              Magic Marking AI Tool - Empowering educators with intelligent assessment technology
-            </p>
+            <div className="text-center space-y-2">
+              <p className="text-sm font-medium text-foreground">
+                Magic Marking AI Tool
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Empowering educators with intelligent assessment technology
+              </p>
+            </div>
           </div>
         </footer>
       </main>
