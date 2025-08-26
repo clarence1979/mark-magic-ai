@@ -91,7 +91,7 @@ export class OpenAIService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-5-2025-08-07',
+          model: 'gpt-4o',
           messages: [
             {
               role: 'system',
@@ -151,7 +151,7 @@ Format as clear bullet points with specific mark allocations and criteria.`
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-5-2025-08-07',
+          model: 'gpt-4o',
           messages: [
             {
               role: 'system',
