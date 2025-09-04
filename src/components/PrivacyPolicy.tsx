@@ -189,7 +189,6 @@ export function PrivacyPolicy() {
               <p className="text-muted-foreground">
                 For technical questions or additional security documentation, contact us through{' '}
                 <a href="https://clarence.guru" className="text-primary hover:underline">clarence.guru</a>.
-                Additional security certifications and compliance documentation available upon request.
               </p>
             </section>
           </div>
