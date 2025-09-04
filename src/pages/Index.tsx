@@ -7,7 +7,7 @@ import { MarkingResults } from '@/components/MarkingResults';
 import { PrivacyPolicy } from '@/components/PrivacyPolicy';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GraduationCap, Settings, Upload, Zap, CheckCircle } from 'lucide-react';
+import { GraduationCap, Settings, Upload, Zap, CheckCircle, Shield } from 'lucide-react';
 import { OpenAIService } from '@/services/openaiService';
 import { useToast } from '@/hooks/use-toast';
 import heroBackground from '@/assets/hero-background.jpg';
@@ -320,29 +320,30 @@ const Index = () => {
               </div>
             </div>
           </div>
-
-          {/* Privacy & Security */}
-          <div className="bg-muted/20 border border-muted rounded-lg p-6 mb-8">
-            <h2 className="text-lg font-semibold mb-4 text-foreground">🔒 Privacy & Security Commitment</h2>
-            <div className="grid md:grid-cols-2 gap-4 text-sm text-muted-foreground">
-              <div>
-                <h3 className="font-medium text-foreground mb-2">Local Data Storage</h3>
-                <p>Your API key is stored securely in your browser and never sent to our servers.</p>
+          
+          {/* Security & Privacy Section - Prominent for IT Departments */}
+          <Card className="shadow-soft border-primary/10 bg-gradient-to-r from-primary/5 to-primary/10">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 text-primary">
+                <Shield className="w-6 h-6" />
+                Security & Compliance Information
+              </CardTitle>
+              <CardDescription>
+                Comprehensive security overview designed for school IT departments and data governance teams
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+                <div className="space-y-2">
+                  <p className="text-sm font-medium">✓ Zero server data storage • ✓ FERPA/COPPA aligned • ✓ Direct OpenAI API integration</p>
+                  <p className="text-sm text-muted-foreground">
+                    Client-side processing ensures student data never touches our servers. Full technical documentation available.
+                  </p>
+                </div>
+                <PrivacyPolicy />
               </div>
-              <div>
-                <h3 className="font-medium text-foreground mb-2">Direct AI Processing</h3>
-                <p>Student work is processed directly through OpenAI's secure API with enterprise encryption.</p>
-              </div>
-              <div>
-                <h3 className="font-medium text-foreground mb-2">No Data Retention</h3>
-                <p>We don't store, save, or retain any uploaded images or marking results.</p>
-              </div>
-              <div>
-                <h3 className="font-medium text-foreground mb-2">Complete Control</h3>
-                <p>You maintain full control over your data - disconnect anytime by removing your API key.</p>
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* File Upload */}
           <FileUpload 
@@ -485,17 +486,13 @@ const Index = () => {
               </form>
             </div>
             
-            <div className="text-center space-y-2 mb-4">
+            <div className="text-center space-y-2">
               <p className="text-sm font-medium text-foreground">
                 Magic Marking AI Tool
               </p>
               <p className="text-xs text-muted-foreground">
                 Empowering educators with intelligent assessment technology
               </p>
-            </div>
-            
-            <div className="flex items-center justify-center">
-              <PrivacyPolicy />
             </div>
           </div>
         </footer>
