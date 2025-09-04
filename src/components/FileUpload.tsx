@@ -20,7 +20,9 @@ export const FileUpload = ({ onFilesSelect, disabled }: FileUploadProps) => {
     'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic',
     'application/pdf',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // DOCX
-    'application/msword' // DOC
+    'application/msword', // DOC
+    'text/plain', // Sometimes PDFs are detected as text
+    '', // Handle empty MIME types
   ];
 
   const getFileIcon = (fileType: string) => {
@@ -52,7 +54,15 @@ export const FileUpload = ({ onFilesSelect, disabled }: FileUploadProps) => {
   }, [disabled]);
 
   const validateFile = (file: File): boolean => {
-    if (!ACCEPTED_FILE_TYPES.includes(file.type)) {
+    const fileName = file.name.toLowerCase();
+    const fileType = file.type;
+    
+    // Check by file extension as fallback since MIME types can be unreliable
+    const isValidImage = fileType.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|heic)$/i.test(fileName);
+    const isValidPDF = fileType === 'application/pdf' || fileName.endsWith('.pdf');
+    const isValidDoc = fileType.includes('word') || fileType.includes('document') || /\.(doc|docx)$/i.test(fileName);
+    
+    if (!isValidImage && !isValidPDF && !isValidDoc) {
       toast({
         title: "Invalid File Type",
         description: `${file.name} is not supported. Please select images, PDF, or DOCX files.`,
