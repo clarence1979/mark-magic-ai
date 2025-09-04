@@ -7,7 +7,8 @@ import { MarkingResults } from '@/components/MarkingResults';
 import { PrivacyPolicy } from '@/components/PrivacyPolicy';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { GraduationCap, Settings, Upload, Zap, CheckCircle, Shield } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { GraduationCap, Settings, Upload, Zap, CheckCircle, Shield, BookOpen } from 'lucide-react';
 import { OpenAIService } from '@/services/openaiService';
 import { useToast } from '@/hooks/use-toast';
 import heroBackground from '@/assets/hero-background.jpg';
@@ -254,94 +255,110 @@ const Index = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto space-y-6">
           
-          {/* API Key Setup Section - Always visible but collapsible when set */}
-          {(!apiKey || showSetup) ? (
-            <Card className="shadow-soft border-primary/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-3">
-                  <Settings className="w-5 h-5 text-primary" />
-                  OpenAI API Configuration
-                </CardTitle>
-                <CardDescription>
-                  Enter your OpenAI API key to enable OCR and intelligent marking capabilities
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <APIKeySetup onSetup={handleAPIKeySetup} apiKey={apiKey} />
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="shadow-soft bg-success/5 border-success/20">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-success" />
-                    <CardTitle className="text-success">API Key Configured</CardTitle>
+          {/* Consolidated Information Tabs */}
+          <Card className="shadow-soft border-primary/20">
+            <CardContent className="p-0">
+              <Tabs defaultValue="setup" className="w-full">
+                <TabsList className="grid w-full grid-cols-3 rounded-none rounded-t-lg h-12">
+                  <TabsTrigger value="setup" className="flex items-center gap-2">
+                    <Settings className="w-4 h-4" />
+                    Setup
+                  </TabsTrigger>
+                  <TabsTrigger value="how-it-works" className="flex items-center gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    How It Works
+                  </TabsTrigger>
+                  <TabsTrigger value="security" className="flex items-center gap-2">
+                    <Shield className="w-4 h-4" />
+                    Security
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="setup" className="p-6 mt-0">
+                  {(!apiKey || showSetup) ? (
+                    <div className="space-y-4">
+                      <div>
+                        <h3 className="text-lg font-semibold text-primary mb-2">OpenAI API Configuration</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Enter your OpenAI API key to enable OCR and intelligent marking capabilities
+                        </p>
+                      </div>
+                      <APIKeySetup onSetup={handleAPIKeySetup} apiKey={apiKey} />
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <CheckCircle className="w-5 h-5 text-success" />
+                          <h3 className="text-lg font-semibold text-success">API Key Configured</h3>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setShowSetup(true)}
+                        >
+                          <Settings className="w-4 h-4 mr-2" />
+                          Update
+                        </Button>
+                      </div>
+                      <p className="text-sm text-success/80">
+                        Ready to process student work with AI-powered marking
+                      </p>
+                    </div>
+                  )}
+                </TabsContent>
+                
+                <TabsContent value="how-it-works" className="p-6 mt-0">
+                  <div className="grid md:grid-cols-3 gap-6">
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Upload className="w-6 h-6 text-primary" />
+                      </div>
+                      <h4 className="font-medium text-foreground mb-2">1. Upload Student Work</h4>
+                      <p className="text-sm text-muted-foreground">Upload handwritten assignments as images, PDFs, or DOCX files. Camera capture supported.</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <Zap className="w-6 h-6 text-primary" />
+                      </div>
+                      <h4 className="font-medium text-foreground mb-2">2. AI Text Extraction</h4>
+                      <p className="text-sm text-muted-foreground">Advanced OCR extracts text from handwriting with high accuracy, including mathematical notation.</p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                        <CheckCircle className="w-6 h-6 text-primary" />
+                      </div>
+                      <h4 className="font-medium text-foreground mb-2">3. Intelligent Marking</h4>
+                      <p className="text-sm text-muted-foreground">Generate marking schemes automatically or use custom ones with detailed feedback and scores.</p>
+                    </div>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setShowSetup(true)}
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Update
-                  </Button>
-                </div>
-                <CardDescription className="text-success/80">
-                  Ready to process student work with AI-powered marking
-                </CardDescription>
-              </CardHeader>
-            </Card>
-          )}
-          {/* Privacy Principles */}
-          <div className="bg-muted/30 border border-primary/20 rounded-lg p-6 mb-8">
-            <h2 className="text-lg font-semibold mb-4 text-primary">How It Works</h2>
-            <div className="grid md:grid-cols-3 gap-6 text-sm">
-              <div className="text-center">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Upload className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="font-medium text-foreground mb-2">1. Upload Student Work</h3>
-                <p className="text-muted-foreground">Upload handwritten assignments, tests, or homework as images, PDFs, or DOCX files. Use camera capture for quick photos.</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <Zap className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="font-medium text-foreground mb-2">2. AI Text Extraction</h3>
-                <p className="text-muted-foreground">Advanced OCR technology extracts text from handwriting with high accuracy, understanding mathematical notation and student responses.</p>
-              </div>
-              <div className="text-center">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <CheckCircle className="w-6 h-6 text-primary" />
-                </div>
-                <h3 className="font-medium text-foreground mb-2">3. Intelligent Marking</h3>
-                <p className="text-muted-foreground">Generate marking schemes automatically or use custom ones. Get detailed feedback, scores, and improvement suggestions for each student.</p>
-              </div>
-            </div>
-          </div>
-          
-          {/* Security & Privacy Section - Prominent for IT Departments */}
-          <Card className="shadow-soft border-primary/10 bg-gradient-to-r from-primary/5 to-primary/10">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3 text-primary">
-                <Shield className="w-6 h-6" />
-                Security & Compliance Information
-              </CardTitle>
-              <CardDescription>
-                Comprehensive security overview designed for school IT departments and data governance teams
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">✓ Zero server data storage • ✓ FERPA/COPPA aligned • ✓ Direct OpenAI API integration</p>
-                  <p className="text-sm text-muted-foreground">
-                    Client-side processing ensures student data never touches our servers. Full technical documentation available.
-                  </p>
-                </div>
-                <PrivacyPolicy />
-              </div>
+                </TabsContent>
+                
+                <TabsContent value="security" className="p-6 mt-0">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-primary mb-2">Security & Compliance</h3>
+                      <div className="grid sm:grid-cols-3 gap-3 mb-4">
+                        <div className="text-center p-3 bg-success/5 rounded-lg border border-success/20">
+                          <div className="text-xs font-medium text-success">✓ Zero Server Storage</div>
+                        </div>
+                        <div className="text-center p-3 bg-success/5 rounded-lg border border-success/20">
+                          <div className="text-xs font-medium text-success">✓ FERPA/COPPA Aligned</div>
+                        </div>
+                        <div className="text-center p-3 bg-success/5 rounded-lg border border-success/20">
+                          <div className="text-xs font-medium text-success">✓ Direct API Integration</div>
+                        </div>
+                      </div>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Client-side processing ensures student data never touches our servers. All processing happens directly through OpenAI's secure API.
+                      </p>
+                    </div>
+                    <div className="flex justify-center">
+                      <PrivacyPolicy />
+                    </div>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
 
