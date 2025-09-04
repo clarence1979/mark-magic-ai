@@ -214,19 +214,11 @@ const Index = () => {
     }
   };
 
-  if (!apiKey || showSetup) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
-        <APIKeySetup onSetup={handleAPIKeySetup} apiKey={apiKey} />
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Hero Section */}
       <div 
-        className="relative min-h-[60vh] flex items-center justify-center bg-cover bg-center bg-no-repeat"
+        className="relative min-h-[50vh] flex items-center justify-center bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${heroBackground})` }}
       >
         <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-background/90"></div>
@@ -236,42 +228,71 @@ const Index = () => {
               <GraduationCap className="w-10 h-10 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+          <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
             Magic Marking AI Tool
           </h1>
-          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto">
+          <p className="text-lg md:text-xl text-muted-foreground mb-6 max-w-3xl mx-auto">
             Transform handwritten student work into detailed assessments with AI-powered OCR and intelligent marking
           </p>
-          <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <div className="flex items-center gap-3 justify-center">
-              <Upload className="w-6 h-6 text-primary" />
+          <div className="grid md:grid-cols-3 gap-4 mb-6 text-sm">
+            <div className="flex items-center gap-2 justify-center">
+              <Upload className="w-5 h-5 text-primary" />
               <span className="text-foreground font-medium">Upload & Extract</span>
             </div>
-            <div className="flex items-center gap-3 justify-center">
-              <Zap className="w-6 h-6 text-primary" />
+            <div className="flex items-center gap-2 justify-center">
+              <Zap className="w-5 h-5 text-primary" />
               <span className="text-foreground font-medium">AI Analysis</span>
             </div>
-            <div className="flex items-center gap-3 justify-center">
-              <CheckCircle className="w-6 h-6 text-primary" />
+            <div className="flex items-center gap-2 justify-center">
+              <CheckCircle className="w-5 h-5 text-primary" />
               <span className="text-foreground font-medium">Instant Results</span>
             </div>
-          </div>
-          <div className="flex items-center justify-center gap-4">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={() => setShowSetup(true)}
-            >
-              <Settings className="w-4 h-4 mr-2" />
-              API Settings
-            </Button>
-            <PrivacyPolicy />
           </div>
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto space-y-8">
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto space-y-6">
+          
+          {/* API Key Setup Section - Always visible but collapsible when set */}
+          {(!apiKey || showSetup) ? (
+            <Card className="shadow-soft border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <Settings className="w-5 h-5 text-primary" />
+                  OpenAI API Configuration
+                </CardTitle>
+                <CardDescription>
+                  Enter your OpenAI API key to enable OCR and intelligent marking capabilities
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <APIKeySetup onSetup={handleAPIKeySetup} apiKey={apiKey} />
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="shadow-soft bg-success/5 border-success/20">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-success" />
+                    <CardTitle className="text-success">API Key Configured</CardTitle>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowSetup(true)}
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Update
+                  </Button>
+                </div>
+                <CardDescription className="text-success/80">
+                  Ready to process student work with AI-powered marking
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          )}
           {/* Privacy Principles */}
           <div className="bg-muted/30 border border-primary/20 rounded-lg p-6 mb-8">
             <h2 className="text-lg font-semibold mb-4 text-primary">How It Works</h2>
@@ -464,13 +485,17 @@ const Index = () => {
               </form>
             </div>
             
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-2 mb-4">
               <p className="text-sm font-medium text-foreground">
                 Magic Marking AI Tool
               </p>
               <p className="text-xs text-muted-foreground">
                 Empowering educators with intelligent assessment technology
               </p>
+            </div>
+            
+            <div className="flex items-center justify-center">
+              <PrivacyPolicy />
             </div>
           </div>
         </footer>

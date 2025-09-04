@@ -44,63 +44,52 @@ export const APIKeySetup = ({ onSetup, apiKey }: APIKeySetupProps) => {
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto shadow-medium">
-      <CardHeader className="text-center">
-        <div className="w-12 h-12 bg-gradient-primary rounded-lg flex items-center justify-center mx-auto mb-4">
-          <Key className="w-6 h-6 text-primary-foreground" />
-        </div>
-        <CardTitle>OpenAI API Configuration</CardTitle>
-        <CardDescription>
-          Enter your OpenAI API key to enable OCR and intelligent marking capabilities
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="apiKey">API Key</Label>
-            <div className="relative">
-              <Input
-                id="apiKey"
-                type={showKey ? "text" : "password"}
-                value={inputApiKey}
-                onChange={(e) => setInputApiKey(e.target.value)}
-                placeholder="sk-..."
-                className="pr-10"
-                required
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                onClick={() => setShowKey(!showKey)}
-              >
-                {showKey ? (
-                  <EyeOff className="w-4 h-4 text-muted-foreground" />
-                ) : (
-                  <Eye className="w-4 h-4 text-muted-foreground" />
-                )}
-              </Button>
-            </div>
-          </div>
-          <Button type="submit" className="w-full">
-            {apiKey ? 'Update API Key' : 'Set API Key'}
-          </Button>
-        </form>
-        <div className="mt-4 p-3 bg-muted rounded-lg">
-          <p className="text-sm text-muted-foreground">
-            Your API key is stored locally and never shared. Get your API key from{' '}
-            <a 
-              href="https://platform.openai.com/api-keys" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-primary hover:underline"
+    <div className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="apiKey">API Key</Label>
+          <div className="relative">
+            <Input
+              id="apiKey"
+              type={showKey ? "text" : "password"}
+              value={inputApiKey}
+              onChange={(e) => setInputApiKey(e.target.value)}
+              placeholder="sk-..."
+              className="pr-10"
+              required
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+              onClick={() => setShowKey(!showKey)}
             >
-              OpenAI Dashboard
-            </a>
-          </p>
+              {showKey ? (
+                <EyeOff className="w-4 h-4 text-muted-foreground" />
+              ) : (
+                <Eye className="w-4 h-4 text-muted-foreground" />
+              )}
+            </Button>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+        <Button type="submit" className="w-full">
+          {apiKey ? 'Update API Key' : 'Set API Key'}
+        </Button>
+      </form>
+      <div className="p-3 bg-muted rounded-lg">
+        <p className="text-sm text-muted-foreground">
+          Your API key is stored locally and never shared. Get your API key from{' '}
+          <a 
+            href="https://platform.openai.com/api-keys" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-primary hover:underline"
+          >
+            OpenAI Dashboard
+          </a>
+        </p>
+      </div>
+    </div>
   );
 };
