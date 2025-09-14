@@ -244,14 +244,14 @@ const Index = () => {
       >
         <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-background/90"></div>
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-          <div className="flex justify-center mb-4 sm:mb-6">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-primary rounded-xl flex items-center justify-center shadow-lg">
+          <div className="flex items-center justify-center gap-4 mb-4 sm:mb-6">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-primary rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
               <GraduationCap className="w-8 h-8 sm:w-10 sm:h-10 text-primary-foreground" />
             </div>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent text-left">
+              Magic Marking AI Tool
+            </h1>
           </div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
-            Magic Marking AI Tool
-          </h1>
           <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-4 sm:mb-6 max-w-3xl mx-auto px-2">
             Transform handwritten student work into detailed assessments with AI-powered OCR and intelligent marking
           </p>
