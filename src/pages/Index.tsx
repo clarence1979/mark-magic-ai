@@ -208,26 +208,43 @@ const Index = () => {
       const markingResponse = await openaiService.markStudentWork(ocrText, markingScheme);
       console.log('Marking response received:', markingResponse);
       
-        if (markingResponse.success) {
-          setMarkingResults(markingResponse);
-          updateProcessingStep('marking', 'completed');
-          setCurrentProgress(100);
-          // Auto-advance to results tab when marking is complete
-          setActiveTab('results');
-          
-          toast({
-            title: "Marking Complete",
-            description: "Student work has been marked successfully",
-          });
-        } else {
-          throw new Error(markingResponse.error || 'Failed to mark work');
-        }
+      if (markingResponse.success && markingResponse.results) {
+        console.log('Setting marking results:', markingResponse);
+        setMarkingResults(markingResponse);
+        updateProcessingStep('marking', 'completed');
+        setCurrentProgress(100);
+        // Auto-advance to results tab when marking is complete
+        setActiveTab('results');
+        
+        toast({
+          title: "Marking Complete",
+          description: "Student work has been marked successfully",
+        });
+      } else {
+        console.error('Marking failed:', markingResponse.error);
+        throw new Error(markingResponse.error || 'Failed to mark work - no results returned');
+      }
     } catch (error) {
       console.error('Marking Error:', error);
       updateProcessingStep('marking', 'error');
+      
+      // More detailed error messaging
+      let errorMessage = 'Failed to mark student work';
+      if (error instanceof Error) {
+        if (error.message.includes('401')) {
+          errorMessage = 'Invalid API key. Please check your OpenAI API key.';
+        } else if (error.message.includes('429')) {
+          errorMessage = 'Rate limit exceeded. Please wait a moment and try again.';
+        } else if (error.message.includes('network')) {
+          errorMessage = 'Network error. Please check your internet connection.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       toast({
         title: "Marking Failed",
-        description: error instanceof Error ? error.message : 'Failed to mark student work',
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -516,14 +533,26 @@ const Index = () => {
                       </Button>
                     </div>
                     
-                    {markingResults && (
-                      <MarkingResults
-                        results={markingResults.results || []}
-                        ocrText={ocrText}
-                        totalMarks={markingResults.totalMarks || 0}
-                        maxTotalMarks={markingResults.maxTotalMarks || 0}
-                        overallFeedback={markingResults.overallFeedback || ''}
-                      />
+                    {markingResults ? (
+                      <div>
+                        <div className="mb-4 p-3 bg-success/10 border border-success/20 rounded-lg">
+                          <p className="text-sm text-success font-medium">
+                            ✓ Marking Complete: {markingResults.results?.length || 0} question(s) processed
+                          </p>
+                        </div>
+                        <MarkingResults
+                          results={markingResults.results || []}
+                          ocrText={ocrText}
+                          totalMarks={markingResults.totalMarks || 0}
+                          maxTotalMarks={markingResults.maxTotalMarks || 0}
+                          overallFeedback={markingResults.overallFeedback || ''}
+                        />
+                      </div>
+                    ) : (
+                      <div className="text-center p-8 bg-muted/50 rounded-lg">
+                        <p className="text-muted-foreground">No marking results available yet.</p>
+                        <p className="text-sm text-muted-foreground mt-1">Complete the marking process to see results here.</p>
+                      </div>
                     )}
                   </div>
                 </TabsContent>
