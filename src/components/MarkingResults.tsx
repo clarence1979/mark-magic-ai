@@ -356,81 +356,96 @@ export const MarkingResults = ({
         </TabsList>
         
         <TabsContent value="results" className="space-y-4">
-          {results.map((result, index) => (
-            <Card key={index} className="shadow-soft">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{result.question}</CardTitle>
-                  <Badge 
-                    variant={result.awardedMarks === result.maxMarks ? "default" : "secondary"}
-                    className="ml-2"
-                  >
-                    {result.awardedMarks}/{result.maxMarks}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="font-medium mb-2">Student Answer</h4>
-                  <p className="text-sm bg-muted p-3 rounded-lg">{result.studentAnswer}</p>
-                </div>
-                
-                {result.correctAnswer && (
-                  <div>
-                    <h4 className="font-medium mb-2 text-success">Correct Answer</h4>
-                    <p className="text-sm bg-success/5 border border-success/20 p-3 rounded-lg">{result.correctAnswer}</p>
-                  </div>
-                )}
-                
-                <div>
-                  <h4 className="font-medium mb-2">Feedback & Marking Justification</h4>
-                  <p className="text-sm text-muted-foreground">{result.feedback}</p>
-                </div>
+          {results.map((result, index) => {
+            // Ensure all properties are safe to render
+            const safeResult = {
+              question: typeof result.question === 'string' ? result.question : 'Question ' + (index + 1),
+              studentAnswer: typeof result.studentAnswer === 'string' ? result.studentAnswer : 'No answer provided',
+              correctAnswer: typeof result.correctAnswer === 'string' ? result.correctAnswer : '',
+              maxMarks: typeof result.maxMarks === 'number' ? result.maxMarks : 0,
+              awardedMarks: typeof result.awardedMarks === 'number' ? result.awardedMarks : 0,
+              feedback: typeof result.feedback === 'string' ? result.feedback : 'No feedback available',
+              markingScheme: typeof result.markingScheme === 'string' ? result.markingScheme : '',
+              strengths: Array.isArray(result.strengths) ? result.strengths.filter(s => typeof s === 'string') : [],
+              improvements: Array.isArray(result.improvements) ? result.improvements.filter(s => typeof s === 'string') : []
+            };
 
-                {result.markingScheme && (
-                  <div>
-                    <h4 className="font-medium mb-2">Marking Scheme</h4>
-                    <p className="text-sm bg-muted/50 p-3 rounded-lg border-l-4 border-primary/30">{result.markingScheme}</p>
+            return (
+              <Card key={index} className="shadow-soft">
+                <CardHeader>
+                  <div className="flex justify-between items-start">
+                    <CardTitle className="text-lg">{safeResult.question}</CardTitle>
+                    <Badge 
+                      variant={safeResult.awardedMarks === safeResult.maxMarks ? "default" : "secondary"}
+                      className="ml-2"
+                    >
+                      {safeResult.awardedMarks}/{safeResult.maxMarks}
+                    </Badge>
                   </div>
-                )}
-
-                {(result.strengths.length > 0 || result.improvements.length > 0) && (
-                  <>
-                    <Separator />
-                    <div className="grid md:grid-cols-2 gap-4">
-                      {result.strengths.length > 0 && (
-                        <div>
-                          <h4 className="font-medium text-success mb-2 flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4" />
-                            Strengths
-                          </h4>
-                          <ul className="text-sm space-y-1">
-                            {result.strengths.map((strength, i) => (
-                              <li key={i} className="text-muted-foreground">• {strength}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      
-                      {result.improvements.length > 0 && (
-                        <div>
-                          <h4 className="font-medium text-warning mb-2 flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4" />
-                            Areas for Improvement
-                          </h4>
-                          <ul className="text-sm space-y-1">
-                            {result.improvements.map((improvement, i) => (
-                              <li key={i} className="text-muted-foreground">• {improvement}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h4 className="font-medium mb-2">Student Answer</h4>
+                    <p className="text-sm bg-muted p-3 rounded-lg">{safeResult.studentAnswer}</p>
+                  </div>
+                  
+                  {safeResult.correctAnswer && (
+                    <div>
+                      <h4 className="font-medium mb-2 text-success">Correct Answer</h4>
+                      <p className="text-sm bg-success/5 border border-success/20 p-3 rounded-lg">{safeResult.correctAnswer}</p>
                     </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                  )}
+                  
+                  <div>
+                    <h4 className="font-medium mb-2">Feedback & Marking Justification</h4>
+                    <p className="text-sm text-muted-foreground">{safeResult.feedback}</p>
+                  </div>
+
+                  {safeResult.markingScheme && (
+                    <div>
+                      <h4 className="font-medium mb-2">Marking Scheme</h4>
+                      <p className="text-sm bg-muted/50 p-3 rounded-lg border-l-4 border-primary/30">{safeResult.markingScheme}</p>
+                    </div>
+                  )}
+
+                  {(safeResult.strengths.length > 0 || safeResult.improvements.length > 0) && (
+                    <>
+                      <Separator />
+                      <div className="grid md:grid-cols-2 gap-4">
+                        {safeResult.strengths.length > 0 && (
+                          <div>
+                            <h4 className="font-medium text-success mb-2 flex items-center gap-2">
+                              <CheckCircle className="w-4 h-4" />
+                              Strengths
+                            </h4>
+                            <ul className="text-sm space-y-1">
+                              {safeResult.strengths.map((strength, i) => (
+                                <li key={i} className="text-muted-foreground">• {strength}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                        
+                        {safeResult.improvements.length > 0 && (
+                          <div>
+                            <h4 className="font-medium text-warning mb-2 flex items-center gap-2">
+                              <AlertTriangle className="w-4 h-4" />
+                              Areas for Improvement
+                            </h4>
+                            <ul className="text-sm space-y-1">
+                              {safeResult.improvements.map((improvement, i) => (
+                                <li key={i} className="text-muted-foreground">• {improvement}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
         </TabsContent>
         
         <TabsContent value="ocr">
