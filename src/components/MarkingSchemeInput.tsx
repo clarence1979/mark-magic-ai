@@ -10,9 +10,10 @@ interface MarkingSchemeInputProps {
   onSchemeChange: (scheme: string, isGenerated: boolean) => void;
   ocrText?: string;
   disabled?: boolean;
+  generatedScheme?: string; // Add this to show the generated scheme
 }
 
-export const MarkingSchemeInput = ({ onSchemeChange, ocrText, disabled }: MarkingSchemeInputProps) => {
+export const MarkingSchemeInput = ({ onSchemeChange, ocrText, disabled, generatedScheme }: MarkingSchemeInputProps) => {
   const [customScheme, setCustomScheme] = useState('');
   const [activeTab, setActiveTab] = useState('custom');
 
@@ -71,24 +72,48 @@ export const MarkingSchemeInput = ({ onSchemeChange, ocrText, disabled }: Markin
           </TabsContent>
           
           <TabsContent value="generate" className="space-y-4">
-            <div className="text-center py-8">
-              <Wand2 className="w-12 h-12 mx-auto mb-4 text-primary" />
-              <h3 className="text-lg font-medium mb-2">AI-Generated Marking Scheme</h3>
-              <p className="text-muted-foreground mb-6">
-                {ocrText 
-                  ? "Generate a marking scheme based on the uploaded student work"
-                  : "Upload and process student work first to generate a marking scheme"
-                }
-              </p>
-              <Button 
-                onClick={handleGenerateScheme}
-                disabled={!ocrText || disabled}
-                className="min-w-[200px]"
-              >
-                <Wand2 className="w-4 h-4 mr-2" />
-                Generate Scheme
-              </Button>
-            </div>
+            {!generatedScheme ? (
+              <div className="text-center py-8">
+                <Wand2 className="w-12 h-12 mx-auto mb-4 text-primary" />
+                <h3 className="text-lg font-medium mb-2">AI-Generated Marking Scheme</h3>
+                <p className="text-muted-foreground mb-6">
+                  {ocrText 
+                    ? "Generate a marking scheme based on the uploaded student work"
+                    : "Upload and process student work first to generate a marking scheme"
+                  }
+                </p>
+                <Button 
+                  onClick={handleGenerateScheme}
+                  disabled={!ocrText || disabled}
+                  className="min-w-[200px]"
+                >
+                  <Wand2 className="w-4 h-4 mr-2" />
+                  Generate Scheme
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <Wand2 className="w-5 h-5 text-success" />
+                  <h3 className="text-lg font-medium text-success">Generated Marking Scheme</h3>
+                  <Button 
+                    onClick={handleGenerateScheme}
+                    disabled={!ocrText || disabled}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Wand2 className="w-3 h-3 mr-1" />
+                    Regenerate
+                  </Button>
+                </div>
+                <div className="bg-success/5 border border-success/20 p-4 rounded-lg">
+                  <pre className="whitespace-pre-wrap text-sm font-medium text-foreground">{generatedScheme}</pre>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  This marking scheme was automatically generated based on your student work. You can regenerate it if needed.
+                </p>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </CardContent>

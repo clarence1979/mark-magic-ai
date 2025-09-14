@@ -178,6 +178,8 @@ const Index = () => {
   };
 
   const handleStartMarking = async () => {
+    console.log('Starting marking process...', { ocrText: !!ocrText, markingScheme: !!markingScheme, apiKey: !!apiKey });
+    
     if (!ocrText || !markingScheme || !apiKey) {
       toast({
         title: "Missing Information",
@@ -195,7 +197,9 @@ const Index = () => {
       const openaiService = new OpenAIService(apiKey);
       setCurrentProgress(50);
       
+      console.log('Calling OpenAI service for marking...');
       const markingResponse = await openaiService.markStudentWork(ocrText, markingScheme);
+      console.log('Marking response received:', markingResponse);
       
       if (markingResponse.success) {
         setMarkingResults(markingResponse);
@@ -450,6 +454,7 @@ const Index = () => {
               onSchemeChange={handleSchemeChange}
               ocrText={ocrText}
               disabled={isProcessing}
+              generatedScheme={isSchemeGenerated ? markingScheme : undefined}
             />
           )}
 
@@ -469,13 +474,20 @@ const Index = () => {
 
           {/* Marking Results */}
           {markingResults && (
-            <MarkingResults
-              results={markingResults.results || []}
-              ocrText={ocrText}
-              totalMarks={markingResults.totalMarks || 0}
-              maxTotalMarks={markingResults.maxTotalMarks || 0}
-              overallFeedback={markingResults.overallFeedback || ''}
-            />
+            <div>
+              <div className="mb-4">
+                <p className="text-sm text-muted-foreground">
+                  Debug: Results loaded with {markingResults.results?.length || 0} questions
+                </p>
+              </div>
+              <MarkingResults
+                results={markingResults.results || []}
+                ocrText={ocrText}
+                totalMarks={markingResults.totalMarks || 0}
+                maxTotalMarks={markingResults.maxTotalMarks || 0}
+                overallFeedback={markingResults.overallFeedback || ''}
+              />
+            </div>
           )}
         </div>
         

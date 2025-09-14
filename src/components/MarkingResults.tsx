@@ -34,14 +34,74 @@ export const MarkingResults = ({
   maxTotalMarks, 
   overallFeedback 
 }: MarkingResultsProps) => {
+  console.log('MarkingResults rendering with:', { 
+    resultsCount: results?.length, 
+    totalMarks, 
+    maxTotalMarks, 
+    hasOverallFeedback: !!overallFeedback 
+  });
+
+  // Add safety checks
+  if (!results || !Array.isArray(results)) {
+    console.error('Invalid results data:', results);
+    return (
+      <Card className="shadow-medium">
+        <CardContent className="p-6 text-center">
+          <p className="text-destructive">Error: Invalid marking results data</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (results.length === 0) {
+    console.warn('No results to display');
+    return (
+      <Card className="shadow-medium">
+        <CardContent className="p-6 text-center">
+          <p className="text-muted-foreground">No marking results available</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   const percentage = Math.round((totalMarks / maxTotalMarks) * 100);
   
   const getGradeInfo = (percentage: number) => {
-    if (percentage >= 80) return { grade: 'A', color: 'success', icon: CheckCircle };
-    if (percentage >= 70) return { grade: 'B', color: 'success', icon: CheckCircle };
-    if (percentage >= 60) return { grade: 'C', color: 'warning', icon: AlertTriangle };
-    if (percentage >= 50) return { grade: 'D', color: 'warning', icon: AlertTriangle };
-    return { grade: 'F', color: 'destructive', icon: XCircle };
+    if (percentage >= 80) return { 
+      grade: 'A', 
+      color: 'success', 
+      icon: CheckCircle,
+      bgClass: 'bg-success/10',
+      textClass: 'text-success'
+    };
+    if (percentage >= 70) return { 
+      grade: 'B', 
+      color: 'success', 
+      icon: CheckCircle,
+      bgClass: 'bg-success/10',
+      textClass: 'text-success'
+    };
+    if (percentage >= 60) return { 
+      grade: 'C', 
+      color: 'warning', 
+      icon: AlertTriangle,
+      bgClass: 'bg-warning/10',
+      textClass: 'text-warning'
+    };
+    if (percentage >= 50) return { 
+      grade: 'D', 
+      color: 'warning', 
+      icon: AlertTriangle,
+      bgClass: 'bg-warning/10',
+      textClass: 'text-warning'
+    };
+    return { 
+      grade: 'F', 
+      color: 'destructive', 
+      icon: XCircle,
+      bgClass: 'bg-destructive/10',
+      textClass: 'text-destructive'
+    };
   };
 
   const gradeInfo = getGradeInfo(percentage);
@@ -255,8 +315,8 @@ export const MarkingResults = ({
       <Card className="shadow-medium">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-3">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center bg-${gradeInfo.color}/10`}>
-              <GradeIcon className={`w-8 h-8 text-${gradeInfo.color}`} />
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center ${gradeInfo.bgClass}`}>
+              <GradeIcon className={`w-8 h-8 ${gradeInfo.textClass}`} />
             </div>
             <div>
               <CardTitle className="text-3xl">
