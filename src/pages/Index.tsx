@@ -23,7 +23,8 @@ interface ProcessingStep {
 
 const Index = () => {
   const [apiKey, setApiKey] = useState<string>(() => cache.apiKey);
-  const [showSetup, setShowSetup] = useState(false);
+  const [activeTab, setActiveTab] = useState('upload'); // Start with upload tab instead of setup
+  const [showQuickSetup, setShowQuickSetup] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [currentFileIndex, setCurrentFileIndex] = useState<number | null>(null);
   const [ocrText, setOcrText] = useState<string>('');
@@ -51,7 +52,11 @@ const Index = () => {
   const handleAPIKeySetup = (key: string) => {
     setApiKey(key);
     cache.apiKey = key;
-    setShowSetup(false);
+    setShowQuickSetup(false);
+    // Auto-advance to upload tab once API key is set
+    if (!selectedFiles.length) {
+      setActiveTab('upload');
+    }
   };
 
   const updateProcessingStep = (stepId: string, status: ProcessingStep['status']) => {
@@ -76,6 +81,8 @@ const Index = () => {
     setOcrText('');
     setMarkingResults(null);
     setCurrentFileIndex(null);
+    // Auto-advance to process tab when files are selected
+    setActiveTab('process');
     // Reset processing steps
     setProcessingSteps([
       { id: 'ocr', label: 'Extracting text from image', status: 'pending' },
@@ -144,38 +151,38 @@ const Index = () => {
       setIsProcessing(true);
       updateProcessingStep('scheme', 'processing');
       
-      try {
-        const openaiService = new OpenAIService(apiKey);
-        const schemeResponse = await openaiService.generateMarkingScheme(ocrText);
-        
-        if (schemeResponse.success && schemeResponse.scheme) {
-          setMarkingScheme(schemeResponse.scheme);
-          setIsSchemeGenerated(true);
-          updateProcessingStep('scheme', 'completed');
+        try {
+          const openaiService = new OpenAIService(apiKey);
+          const schemeResponse = await openaiService.generateMarkingScheme(ocrText);
           
+          if (schemeResponse.success && schemeResponse.scheme) {
+            setMarkingScheme(schemeResponse.scheme);
+            setIsSchemeGenerated(true);
+            updateProcessingStep('scheme', 'completed');
+            
+            toast({
+              title: "Scheme Generated",
+              description: "AI marking scheme created successfully",
+            });
+          } else {
+            throw new Error(schemeResponse.error || 'Failed to generate scheme');
+          }
+        } catch (error) {
+          console.error('Scheme Generation Error:', error);
+          updateProcessingStep('scheme', 'error');
           toast({
-            title: "Scheme Generated",
-            description: "AI marking scheme created successfully",
+            title: "Generation Failed",
+            description: error instanceof Error ? error.message : 'Failed to generate scheme',
+            variant: "destructive",
           });
-        } else {
-          throw new Error(schemeResponse.error || 'Failed to generate scheme');
+        } finally {
+          setIsProcessing(false);
         }
-      } catch (error) {
-        console.error('Scheme Generation Error:', error);
-        updateProcessingStep('scheme', 'error');
-        toast({
-          title: "Generation Failed",
-          description: error instanceof Error ? error.message : 'Failed to generate scheme',
-          variant: "destructive",
-        });
-      } finally {
-        setIsProcessing(false);
+      } else {
+        setMarkingScheme(scheme);
+        setIsSchemeGenerated(false);
       }
-    } else {
-      setMarkingScheme(scheme);
-      setIsSchemeGenerated(false);
-    }
-  };
+    };
 
   const handleStartMarking = async () => {
     console.log('Starting marking process...', { ocrText: !!ocrText, markingScheme: !!markingScheme, apiKey: !!apiKey });
@@ -201,18 +208,20 @@ const Index = () => {
       const markingResponse = await openaiService.markStudentWork(ocrText, markingScheme);
       console.log('Marking response received:', markingResponse);
       
-      if (markingResponse.success) {
-        setMarkingResults(markingResponse);
-        updateProcessingStep('marking', 'completed');
-        setCurrentProgress(100);
-        
-        toast({
-          title: "Marking Complete",
-          description: "Student work has been marked successfully",
-        });
-      } else {
-        throw new Error(markingResponse.error || 'Failed to mark work');
-      }
+        if (markingResponse.success) {
+          setMarkingResults(markingResponse);
+          updateProcessingStep('marking', 'completed');
+          setCurrentProgress(100);
+          // Auto-advance to results tab when marking is complete
+          setActiveTab('results');
+          
+          toast({
+            title: "Marking Complete",
+            description: "Student work has been marked successfully",
+          });
+        } else {
+          throw new Error(markingResponse.error || 'Failed to mark work');
+        }
     } catch (error) {
       console.error('Marking Error:', error);
       updateProcessingStep('marking', 'error');
@@ -266,20 +275,271 @@ const Index = () => {
       <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
           
-          {/* Consolidated Information Tabs */}
+          {/* Quick Setup Bar - Only show when API key is missing */}
+          {!apiKey && (
+            <Card className="border-warning/50 bg-warning/5">
+              <CardContent className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-warning/10 rounded-full flex items-center justify-center">
+                    <Settings className="w-4 h-4 text-warning" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-warning">API Key Required</p>
+                    <p className="text-sm text-warning/80">Configure your OpenAI API key to start marking</p>
+                  </div>
+                </div>
+                <Button onClick={() => setShowQuickSetup(true)} variant="outline" size="sm">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Setup API Key
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Quick Setup Modal */}
+          {showQuickSetup && (
+            <Card className="shadow-medium border-primary/20">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Settings className="w-5 h-5 text-primary" />
+                  Quick API Setup
+                </CardTitle>
+                <CardDescription>
+                  Enter your OpenAI API key to enable AI-powered marking
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <APIKeySetup onSetup={handleAPIKeySetup} apiKey={apiKey} />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Main Workflow Tabs */}
           <Card className="shadow-soft border-primary/20">
             <CardContent className="p-0">
-              <Tabs defaultValue="setup" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 rounded-none rounded-t-lg h-10 sm:h-12">
-                  <TabsTrigger value="setup" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
-                    <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
-                    <span className="hidden sm:inline">Setup</span>
-                    <span className="sm:hidden">Set</span>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-4 rounded-none rounded-t-lg h-10 sm:h-12">
+                  <TabsTrigger value="upload" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
+                    <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Upload</span>
+                    <span className="sm:hidden">Up</span>
                   </TabsTrigger>
+                  <TabsTrigger 
+                    value="process" 
+                    disabled={selectedFiles.length === 0}
+                    className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3"
+                  >
+                    <Zap className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Process</span>
+                    <span className="sm:hidden">Pro</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="mark" 
+                    disabled={!ocrText || !markingScheme}
+                    className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3"
+                  >
+                    <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Mark</span>
+                    <span className="sm:hidden">Mk</span>
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    value="results" 
+                    disabled={!markingResults}
+                    className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3"
+                  >
+                    <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Results</span>
+                    <span className="sm:hidden">Res</span>
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="upload" className="p-4 sm:p-6 mt-0">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-primary mb-2">Upload Student Work</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Upload handwritten assignments, worksheets, or exam papers for AI analysis
+                      </p>
+                    </div>
+                    <FileUpload 
+                      onFilesSelect={handleFilesSelect} 
+                      disabled={isProcessing || !apiKey}
+                    />
+                    {!apiKey && (
+                      <div className="text-center p-4 bg-muted/50 rounded-lg border-2 border-dashed">
+                        <p className="text-sm text-muted-foreground">Configure your API key first to enable file uploads</p>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="process" className="p-4 sm:p-6 mt-0">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-primary mb-2">Process Files</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Extract text from your uploaded files using AI-powered OCR
+                      </p>
+                    </div>
+                    
+                    {selectedFiles.length > 0 && (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{selectedFiles.length} file(s) selected</span>
+                          <Button
+                            onClick={() => selectedFiles.forEach((_, index) => processFile(index))}
+                            disabled={isProcessing}
+                            size="sm"
+                          >
+                            <Zap className="w-4 h-4 mr-2" />
+                            Process All
+                          </Button>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          {selectedFiles.map((file, index) => (
+                            <div key={`${file.name}-${index}`} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                              <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary/10 rounded flex items-center justify-center flex-shrink-0">
+                                  <span className="text-xs font-medium text-primary">{index + 1}</span>
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                  <p className="font-medium truncate text-sm sm:text-base">{file.name}</p>
+                                  <p className="text-xs sm:text-sm text-muted-foreground">
+                                    {(file.size / 1024 / 1024).toFixed(2)} MB • {file.type.split('/')[1]?.toUpperCase()}
+                                  </p>
+                                </div>
+                              </div>
+                              <Button
+                                onClick={() => processFile(index)}
+                                disabled={isProcessing}
+                                size="sm"
+                                variant={currentFileIndex === index ? "default" : "outline"}
+                                className="ml-2 flex-shrink-0"
+                              >
+                                <span className="hidden sm:inline">{currentFileIndex === index && isProcessing ? 'Processing...' : 'Process'}</span>
+                                <span className="sm:hidden">{currentFileIndex === index && isProcessing ? '...' : 'Go'}</span>
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {/* Processing Status */}
+                    {(ocrText || isProcessing) && (
+                      <ProcessingStatus 
+                        steps={processingSteps}
+                        currentProgress={currentProgress}
+                      />
+                    )}
+
+                    {/* OCR Results Preview */}
+                    {ocrText && (
+                      <div className="space-y-4">
+                        <div>
+                          <h4 className="font-medium mb-2">Extracted Text Preview</h4>
+                          <div className="max-h-32 sm:max-h-40 overflow-y-auto bg-muted p-3 sm:p-4 rounded-lg">
+                            <pre className="whitespace-pre-wrap text-xs sm:text-sm">{ocrText}</pre>
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <Button 
+                            onClick={() => setActiveTab('mark')} 
+                            size="lg"
+                            className="w-full sm:w-auto"
+                          >
+                            Continue to Marking
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="mark" className="p-4 sm:p-6 mt-0">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-primary mb-2">Create Marking Scheme & Mark Work</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Generate or provide a marking scheme, then let AI mark the student work
+                      </p>
+                    </div>
+                    
+                    {ocrText && (
+                      <MarkingSchemeInput
+                        onSchemeChange={handleSchemeChange}
+                        ocrText={ocrText}
+                        disabled={isProcessing}
+                        generatedScheme={isSchemeGenerated ? markingScheme : undefined}
+                      />
+                    )}
+                    
+                    {/* Start Marking Button */}
+                    {ocrText && markingScheme && (
+                      <div className="text-center pt-4">
+                        <Button
+                          onClick={handleStartMarking}
+                          disabled={isProcessing}
+                          size="lg"
+                          className="w-full sm:w-auto sm:min-w-[200px]"
+                        >
+                          <CheckCircle className="w-4 h-4 mr-2" />
+                          {isProcessing ? 'Marking...' : 'Start AI Marking'}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="results" className="p-4 sm:p-6 mt-0">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-primary mb-2">Marking Results</h3>
+                        <p className="text-sm text-muted-foreground">
+                          AI analysis and feedback for the student work
+                        </p>
+                      </div>
+                      <Button 
+                        onClick={() => {
+                          setMarkingResults(null);
+                          setOcrText('');
+                          setMarkingScheme('');
+                          setSelectedFiles([]);
+                          setActiveTab('upload');
+                        }}
+                        variant="outline"
+                        size="sm"
+                      >
+                        Start New
+                      </Button>
+                    </div>
+                    
+                    {markingResults && (
+                      <MarkingResults
+                        results={markingResults.results || []}
+                        ocrText={ocrText}
+                        totalMarks={markingResults.totalMarks || 0}
+                        maxTotalMarks={markingResults.maxTotalMarks || 0}
+                        overallFeedback={markingResults.overallFeedback || ''}
+                      />
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+
+          {/* Help & Info Section */}
+          <Card className="shadow-soft border-primary/20">
+            <CardContent className="p-0">
+              <Tabs defaultValue="how-it-works" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 rounded-none rounded-t-lg h-10 sm:h-12">
                   <TabsTrigger value="how-it-works" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
                     <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span className="hidden sm:inline">How It Works</span>
-                    <span className="sm:hidden">How</span>
+                    <span className="sm:hidden">Help</span>
                   </TabsTrigger>
                   <TabsTrigger value="security" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
                     <Shield className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -287,41 +547,6 @@ const Index = () => {
                     <span className="sm:hidden">Sec</span>
                   </TabsTrigger>
                 </TabsList>
-                
-                <TabsContent value="setup" className="p-4 sm:p-6 mt-0">
-                  {(!apiKey || showSetup) ? (
-                    <div className="space-y-4">
-                      <div>
-                        <h3 className="text-lg font-semibold text-primary mb-2">OpenAI API Configuration</h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                          Enter your OpenAI API key to enable OCR and intelligent marking capabilities
-                        </p>
-                      </div>
-                      <APIKeySetup onSetup={handleAPIKeySetup} apiKey={apiKey} />
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <CheckCircle className="w-5 h-5 text-success" />
-                          <h3 className="text-lg font-semibold text-success">API Key Configured</h3>
-                        </div>
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => setShowSetup(true)}
-                        >
-                          <Settings className="w-4 h-4 mr-2" />
-                          Update
-                        </Button>
-                      </div>
-                      <p className="text-sm text-success/80">
-                        Ready to process student work with AI-powered marking
-                      </p>
-                    </div>
-                  )}
-                </TabsContent>
-                
                 <TabsContent value="how-it-works" className="p-4 sm:p-6 mt-0">
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                     <div className="text-center">
@@ -375,120 +600,6 @@ const Index = () => {
               </Tabs>
             </CardContent>
           </Card>
-
-          {/* File Upload */}
-          <FileUpload 
-            onFilesSelect={handleFilesSelect} 
-            disabled={isProcessing}
-          />
-
-          {/* Selected Files List */}
-          {selectedFiles.length > 0 && !markingResults && (
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle>Selected Files ({selectedFiles.length})</CardTitle>
-                <CardDescription>
-                  Choose a file to process for OCR and marking
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {selectedFiles.map((file, index) => (
-                    <div key={`${file.name}-${index}`} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary/10 rounded flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-medium text-primary">{index + 1}</span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium truncate text-sm sm:text-base">{file.name}</p>
-                          <p className="text-xs sm:text-sm text-muted-foreground">
-                            {(file.size / 1024 / 1024).toFixed(2)} MB • {file.type.split('/')[1]?.toUpperCase()}
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        onClick={() => processFile(index)}
-                        disabled={isProcessing}
-                        size="sm"
-                        variant={currentFileIndex === index ? "default" : "outline"}
-                        className="ml-2 flex-shrink-0"
-                      >
-                        <span className="hidden sm:inline">{currentFileIndex === index && isProcessing ? 'Processing...' : 'Process'}</span>
-                        <span className="sm:hidden">{currentFileIndex === index && isProcessing ? '...' : 'Go'}</span>
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Processing Status */}
-          {(ocrText || isProcessing) && (
-            <ProcessingStatus 
-              steps={processingSteps}
-              currentProgress={currentProgress}
-            />
-          )}
-
-          {/* OCR Results Preview */}
-          {ocrText && !markingResults && (
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle>Extracted Text Preview</CardTitle>
-                <CardDescription>
-                  Review the text extracted from the handwritten work
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="max-h-32 sm:max-h-40 overflow-y-auto bg-muted p-3 sm:p-4 rounded-lg">
-                  <pre className="whitespace-pre-wrap text-xs sm:text-sm">{ocrText}</pre>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Marking Scheme Input */}
-          {ocrText && !markingResults && (
-            <MarkingSchemeInput
-              onSchemeChange={handleSchemeChange}
-              ocrText={ocrText}
-              disabled={isProcessing}
-              generatedScheme={isSchemeGenerated ? markingScheme : undefined}
-            />
-          )}
-
-          {/* Start Marking Button */}
-          {ocrText && markingScheme && !markingResults && (
-            <div className="text-center">
-              <Button
-                onClick={handleStartMarking}
-                disabled={isProcessing}
-                size="lg"
-                className="w-full sm:w-auto sm:min-w-[200px]"
-              >
-                {isProcessing ? 'Marking...' : 'Start Marking'}
-              </Button>
-            </div>
-          )}
-
-          {/* Marking Results */}
-          {markingResults && (
-            <div>
-              <div className="mb-4">
-                <p className="text-sm text-muted-foreground">
-                  Debug: Results loaded with {markingResults.results?.length || 0} questions
-                </p>
-              </div>
-              <MarkingResults
-                results={markingResults.results || []}
-                ocrText={ocrText}
-                totalMarks={markingResults.totalMarks || 0}
-                maxTotalMarks={markingResults.maxTotalMarks || 0}
-                overallFeedback={markingResults.overallFeedback || ''}
-              />
-            </div>
-          )}
         </div>
         
         {/* Footer */}
