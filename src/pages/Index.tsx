@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { APIKeySetup } from '@/components/APIKeySetup';
 import { FileUpload } from '@/components/FileUpload';
 import { MarkingSchemeInput } from '@/components/MarkingSchemeInput';
@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GraduationCap, Settings, Upload, Zap, CheckCircle, Shield, BookOpen } from 'lucide-react';
 import { OpenAIService } from '@/services/openaiService';
 import { useToast } from '@/hooks/use-toast';
+import { cache } from '@/services/apiKeyCache';
 import heroBackground from '@/assets/hero-background.jpg';
 import clarenceLogo from '@/assets/clarence-logo.png';
 
@@ -21,9 +22,7 @@ interface ProcessingStep {
 }
 
 const Index = () => {
-  const [apiKey, setApiKey] = useState<string>(() => 
-    localStorage.getItem('openai_api_key') || ''
-  );
+  const [apiKey, setApiKey] = useState<string>(() => cache.apiKey);
   const [showSetup, setShowSetup] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [currentFileIndex, setCurrentFileIndex] = useState<number | null>(null);
@@ -41,9 +40,17 @@ const Index = () => {
 
   const { toast } = useToast();
 
+  // Auto-sync with cache on mount
+  useEffect(() => {
+    const cachedKey = cache.apiKey;
+    if (cachedKey !== apiKey) {
+      setApiKey(cachedKey);
+    }
+  }, []);
+
   const handleAPIKeySetup = (key: string) => {
     setApiKey(key);
-    localStorage.setItem('openai_api_key', key);
+    cache.apiKey = key;
     setShowSetup(false);
   };
 
@@ -219,62 +226,65 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Hero Section */}
       <div 
-        className="relative min-h-[50vh] flex items-center justify-center bg-cover bg-center bg-no-repeat"
+        className="relative min-h-[40vh] sm:min-h-[50vh] flex items-center justify-center bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${heroBackground})` }}
       >
         <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-background/90"></div>
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-          <div className="flex justify-center mb-6">
-            <div className="w-16 h-16 bg-gradient-primary rounded-xl flex items-center justify-center shadow-lg">
-              <GraduationCap className="w-10 h-10 text-primary-foreground" />
+          <div className="flex justify-center mb-4 sm:mb-6">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-primary rounded-xl flex items-center justify-center shadow-lg">
+              <GraduationCap className="w-8 h-8 sm:w-10 sm:h-10 text-primary-foreground" />
             </div>
           </div>
-          <h1 className="text-3xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold mb-3 sm:mb-4 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
             Magic Marking AI Tool
           </h1>
-          <p className="text-lg md:text-xl text-muted-foreground mb-6 max-w-3xl mx-auto">
+          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-4 sm:mb-6 max-w-3xl mx-auto px-2">
             Transform handwritten student work into detailed assessments with AI-powered OCR and intelligent marking
           </p>
-          <div className="grid md:grid-cols-3 gap-4 mb-6 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6 text-sm">
             <div className="flex items-center gap-2 justify-center">
-              <Upload className="w-5 h-5 text-primary" />
+              <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
               <span className="text-foreground font-medium">Upload & Extract</span>
             </div>
             <div className="flex items-center gap-2 justify-center">
-              <Zap className="w-5 h-5 text-primary" />
+              <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
               <span className="text-foreground font-medium">AI Analysis</span>
             </div>
             <div className="flex items-center gap-2 justify-center">
-              <CheckCircle className="w-5 h-5 text-primary" />
+              <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
               <span className="text-foreground font-medium">Instant Results</span>
             </div>
           </div>
         </div>
       </div>
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto space-y-6">
+      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+        <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
           
           {/* Consolidated Information Tabs */}
           <Card className="shadow-soft border-primary/20">
             <CardContent className="p-0">
               <Tabs defaultValue="setup" className="w-full">
-                <TabsList className="grid w-full grid-cols-3 rounded-none rounded-t-lg h-12">
-                  <TabsTrigger value="setup" className="flex items-center gap-2">
-                    <Settings className="w-4 h-4" />
-                    Setup
+                <TabsList className="grid w-full grid-cols-3 rounded-none rounded-t-lg h-10 sm:h-12">
+                  <TabsTrigger value="setup" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
+                    <Settings className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Setup</span>
+                    <span className="sm:hidden">Set</span>
                   </TabsTrigger>
-                  <TabsTrigger value="how-it-works" className="flex items-center gap-2">
-                    <BookOpen className="w-4 h-4" />
-                    How It Works
+                  <TabsTrigger value="how-it-works" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
+                    <BookOpen className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">How It Works</span>
+                    <span className="sm:hidden">How</span>
                   </TabsTrigger>
-                  <TabsTrigger value="security" className="flex items-center gap-2">
-                    <Shield className="w-4 h-4" />
-                    Security
+                  <TabsTrigger value="security" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
+                    <Shield className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Security</span>
+                    <span className="sm:hidden">Sec</span>
                   </TabsTrigger>
                 </TabsList>
                 
-                <TabsContent value="setup" className="p-6 mt-0">
+                <TabsContent value="setup" className="p-4 sm:p-6 mt-0">
                   {(!apiKey || showSetup) ? (
                     <div className="space-y-4">
                       <div>
@@ -308,8 +318,8 @@ const Index = () => {
                   )}
                 </TabsContent>
                 
-                <TabsContent value="how-it-works" className="p-6 mt-0">
-                  <div className="grid md:grid-cols-3 gap-6">
+                <TabsContent value="how-it-works" className="p-4 sm:p-6 mt-0">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
                     <div className="text-center">
                       <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
                         <Upload className="w-6 h-6 text-primary" />
@@ -334,11 +344,11 @@ const Index = () => {
                   </div>
                 </TabsContent>
                 
-                <TabsContent value="security" className="p-6 mt-0">
+                <TabsContent value="security" className="p-4 sm:p-6 mt-0">
                   <div className="space-y-4">
                     <div>
                       <h3 className="text-lg font-semibold text-primary mb-2">Security & Compliance</h3>
-                      <div className="grid sm:grid-cols-3 gap-3 mb-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
                         <div className="text-center p-3 bg-success/5 rounded-lg border border-success/20">
                           <div className="text-xs font-medium text-success">✓ Zero Server Storage</div>
                         </div>
@@ -381,13 +391,13 @@ const Index = () => {
                 <div className="space-y-2">
                   {selectedFiles.map((file, index) => (
                     <div key={`${file.name}-${index}`} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-primary/10 rounded flex items-center justify-center">
+                      <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary/10 rounded flex items-center justify-center flex-shrink-0">
                           <span className="text-xs font-medium text-primary">{index + 1}</span>
                         </div>
-                        <div>
-                          <p className="font-medium">{file.name}</p>
-                          <p className="text-sm text-muted-foreground">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium truncate text-sm sm:text-base">{file.name}</p>
+                          <p className="text-xs sm:text-sm text-muted-foreground">
                             {(file.size / 1024 / 1024).toFixed(2)} MB • {file.type.split('/')[1]?.toUpperCase()}
                           </p>
                         </div>
@@ -397,8 +407,10 @@ const Index = () => {
                         disabled={isProcessing}
                         size="sm"
                         variant={currentFileIndex === index ? "default" : "outline"}
+                        className="ml-2 flex-shrink-0"
                       >
-                        {currentFileIndex === index && isProcessing ? 'Processing...' : 'Process'}
+                        <span className="hidden sm:inline">{currentFileIndex === index && isProcessing ? 'Processing...' : 'Process'}</span>
+                        <span className="sm:hidden">{currentFileIndex === index && isProcessing ? '...' : 'Go'}</span>
                       </Button>
                     </div>
                   ))}
@@ -425,8 +437,8 @@ const Index = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="max-h-40 overflow-y-auto bg-muted p-4 rounded-lg">
-                  <pre className="whitespace-pre-wrap text-sm">{ocrText}</pre>
+                <div className="max-h-32 sm:max-h-40 overflow-y-auto bg-muted p-3 sm:p-4 rounded-lg">
+                  <pre className="whitespace-pre-wrap text-xs sm:text-sm">{ocrText}</pre>
                 </div>
               </CardContent>
             </Card>
@@ -448,7 +460,7 @@ const Index = () => {
                 onClick={handleStartMarking}
                 disabled={isProcessing}
                 size="lg"
-                className="min-w-[200px]"
+                className="w-full sm:w-auto sm:min-w-[200px]"
               >
                 {isProcessing ? 'Marking...' : 'Start Marking'}
               </Button>
@@ -468,10 +480,10 @@ const Index = () => {
         </div>
         
         {/* Footer */}
-        <footer className="mt-16 border-t pt-8">
+        <footer className="mt-12 sm:mt-16 border-t pt-6 sm:pt-8">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <span className="text-sm text-muted-foreground">Proudly made by:</span>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 mb-4">
+              <span className="text-xs sm:text-sm text-muted-foreground">Proudly made by:</span>
               <a 
                 href="https://clarence.guru" 
                 target="_blank" 
@@ -481,7 +493,7 @@ const Index = () => {
                 <img 
                   src={clarenceLogo} 
                   alt="Clarence.guru" 
-                  className="h-12 w-12 rounded-lg object-cover shadow-md"
+                  className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg object-cover shadow-md"
                 />
               </a>
             </div>

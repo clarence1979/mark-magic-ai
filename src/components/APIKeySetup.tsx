@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Eye, EyeOff, Key } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { cache } from '@/services/apiKeyCache';
 
 interface APIKeySetupProps {
   onSetup: (apiKey: string) => void;
@@ -12,9 +13,22 @@ interface APIKeySetupProps {
 }
 
 export const APIKeySetup = ({ onSetup, apiKey }: APIKeySetupProps) => {
-  const [inputApiKey, setInputApiKey] = useState(apiKey || '');
+  const [inputApiKey, setInputApiKey] = useState(apiKey || cache.apiKey || '');
   const [showKey, setShowKey] = useState(false);
   const { toast } = useToast();
+
+  // Auto-populate from cache on mount and sync with other fields
+  useEffect(() => {
+    const cachedKey = cache.apiKey;
+    if (cachedKey && cachedKey !== inputApiKey) {
+      setInputApiKey(cachedKey);
+    }
+    // Sync all input fields periodically
+    const syncInterval = setInterval(() => {
+      cache.syncInputFields();
+    }, 1000);
+    return () => clearInterval(syncInterval);
+  }, [inputApiKey]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,6 +50,9 @@ export const APIKeySetup = ({ onSetup, apiKey }: APIKeySetupProps) => {
       return;
     }
 
+    // Store in cache
+    cache.apiKey = inputApiKey;
+    
     onSetup(inputApiKey);
     toast({
       title: "Success",
