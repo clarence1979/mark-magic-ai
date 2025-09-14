@@ -185,9 +185,17 @@ const Index = () => {
     };
 
   const handleStartMarking = async () => {
-    console.log('Starting marking process...', { ocrText: !!ocrText, markingScheme: !!markingScheme, apiKey: !!apiKey });
+    console.log('=== MARKING PROCESS START ===');
+    console.log('State check:', { 
+      ocrText: ocrText?.length || 0, 
+      markingScheme: markingScheme?.length || 0, 
+      apiKey: apiKey?.length || 0,
+      activeTab,
+      isProcessing 
+    });
     
     if (!ocrText || !markingScheme || !apiKey) {
+      console.log('Missing required data - aborting');
       toast({
         title: "Missing Information",
         description: "Please ensure you have uploaded work and provided a marking scheme",
@@ -196,39 +204,61 @@ const Index = () => {
       return;
     }
 
+    console.log('Starting processing...');
     setIsProcessing(true);
     setCurrentProgress(0);
     updateProcessingStep('marking', 'processing');
 
     try {
+      console.log('Creating OpenAI service...');
       const openaiService = new OpenAIService(apiKey);
       setCurrentProgress(50);
       
-      console.log('Calling OpenAI service for marking...');
-      const markingResponse = await openaiService.markStudentWork(ocrText, markingScheme);
-      console.log('Marking response received:', markingResponse);
+      console.log('Sending request to OpenAI...');
+      console.log('OCR Text preview:', ocrText.substring(0, 100));
+      console.log('Marking Scheme preview:', markingScheme.substring(0, 100));
       
-      if (markingResponse.success && markingResponse.results) {
-        console.log('Setting marking results:', markingResponse);
+      const markingResponse = await openaiService.markStudentWork(ocrText, markingScheme);
+      console.log('=== RAW RESPONSE ===');
+      console.log('Full response:', JSON.stringify(markingResponse, null, 2));
+      
+      if (markingResponse && markingResponse.success && markingResponse.results) {
+        console.log('Response validation passed');
+        console.log('Results count:', markingResponse.results.length);
+        console.log('Sample result:', markingResponse.results[0]);
+        
+        console.log('Setting marking results...');
         setMarkingResults(markingResponse);
+        
+        console.log('Updating processing step...');
         updateProcessingStep('marking', 'completed');
         setCurrentProgress(100);
-        // Auto-advance to results tab when marking is complete
+        
+        console.log('Switching to results tab...');
         setActiveTab('results');
         
+        console.log('Showing success toast...');
         toast({
           title: "Marking Complete",
           description: "Student work has been marked successfully",
         });
+        
+        console.log('=== MARKING PROCESS COMPLETE ===');
       } else {
-        console.error('Marking failed:', markingResponse.error);
-        throw new Error(markingResponse.error || 'Failed to mark work - no results returned');
+        console.error('Response validation failed:');
+        console.error('Success:', markingResponse?.success);
+        console.error('Results:', markingResponse?.results);
+        console.error('Error:', markingResponse?.error);
+        throw new Error(markingResponse?.error || 'Invalid response from OpenAI');
       }
     } catch (error) {
-      console.error('Marking Error:', error);
+      console.error('=== MARKING ERROR ===');
+      console.error('Error type:', typeof error);
+      console.error('Error message:', error instanceof Error ? error.message : String(error));
+      console.error('Full error:', error);
+      
       updateProcessingStep('marking', 'error');
       
-      // More detailed error messaging
       let errorMessage = 'Failed to mark student work';
       if (error instanceof Error) {
         if (error.message.includes('401')) {
@@ -242,12 +272,14 @@ const Index = () => {
         }
       }
       
+      console.log('Showing error toast:', errorMessage);
       toast({
         title: "Marking Failed",
         description: errorMessage,
         variant: "destructive",
       });
     } finally {
+      console.log('Cleaning up - setting isProcessing to false');
       setIsProcessing(false);
     }
   };
@@ -520,6 +552,7 @@ const Index = () => {
                       </div>
                       <Button 
                         onClick={() => {
+                          console.log('Start New clicked - resetting all state');
                           setMarkingResults(null);
                           setOcrText('');
                           setMarkingScheme('');
@@ -533,27 +566,43 @@ const Index = () => {
                       </Button>
                     </div>
                     
-                    {markingResults ? (
-                      <div>
-                        <div className="mb-4 p-3 bg-success/10 border border-success/20 rounded-lg">
-                          <p className="text-sm text-success font-medium">
-                            ✓ Marking Complete: {markingResults.results?.length || 0} question(s) processed
-                          </p>
+                    <div className="min-h-[200px]">
+                      {(() => {
+                        console.log('Results tab rendering - markingResults:', !!markingResults);
+                        return null;
+                      })()}
+                      {markingResults ? (
+                        <div>
+                          <div className="mb-4 p-3 bg-success/10 border border-success/20 rounded-lg">
+                            <p className="text-sm text-success font-medium">
+                              ✓ Marking Complete: {markingResults.results?.length || 0} question(s) processed
+                            </p>
+                            <p className="text-xs text-success/80 mt-1">
+                              Score: {markingResults.totalMarks || 0}/{markingResults.maxTotalMarks || 0}
+                            </p>
+                          </div>
+                          {(() => {
+                            console.log('About to render MarkingResults component');
+                            return null;
+                          })()}
+                          <MarkingResults
+                            results={markingResults.results || []}
+                            ocrText={ocrText}
+                            totalMarks={markingResults.totalMarks || 0}
+                            maxTotalMarks={markingResults.maxTotalMarks || 0}
+                            overallFeedback={markingResults.overallFeedback || ''}
+                          />
                         </div>
-                        <MarkingResults
-                          results={markingResults.results || []}
-                          ocrText={ocrText}
-                          totalMarks={markingResults.totalMarks || 0}
-                          maxTotalMarks={markingResults.maxTotalMarks || 0}
-                          overallFeedback={markingResults.overallFeedback || ''}
-                        />
-                      </div>
-                    ) : (
-                      <div className="text-center p-8 bg-muted/50 rounded-lg">
-                        <p className="text-muted-foreground">No marking results available yet.</p>
-                        <p className="text-sm text-muted-foreground mt-1">Complete the marking process to see results here.</p>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="text-center p-8 bg-muted/50 rounded-lg">
+                          <p className="text-muted-foreground">No marking results available yet.</p>
+                          <p className="text-sm text-muted-foreground mt-1">Complete the marking process to see results here.</p>
+                          <div className="text-xs text-muted-foreground mt-2 opacity-50">
+                            Current tab: {activeTab} | Processing: {isProcessing ? 'Yes' : 'No'}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </TabsContent>
               </Tabs>
