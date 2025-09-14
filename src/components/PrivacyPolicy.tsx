@@ -463,11 +463,9 @@ export const PrivacyPolicy = () => {
                       </p>
                       <div className="flex items-center gap-2">
                         <Mail className="w-4 h-4 text-success" />
-                        <span className="text-sm">schools@magicmarking.edu.au</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-success" />
-                        <span className="text-sm">1800 SCHOOLS (1800 724 6657)</span>
+                        <a href="https://clarence.guru/#contact" target="_blank" rel="noopener noreferrer" className="text-sm hover:underline text-success">
+                          clarence.guru/#contact
+                        </a>
                       </div>
                     </div>
                   </section>
