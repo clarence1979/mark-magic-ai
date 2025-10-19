@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Eye, EyeOff, Key, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cache } from '@/services/apiKeyCache';
+import { supabase } from '@/lib/supabase';
 
 interface APIKeySetupProps {
   onSetup: (apiKey: string) => void;
@@ -54,23 +55,29 @@ export const APIKeySetup = ({ onSetup, apiKey }: APIKeySetupProps) => {
     setIsValidating(true);
 
     try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const validationUrl = `${supabaseUrl}/functions/v1/validate-openai-key`;
+      console.log('Starting API key validation...');
 
-      const response = await fetch(validationUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ apiKey: inputApiKey }),
+      const { data, error } = await supabase.functions.invoke('validate-openai-key', {
+        body: { apiKey: inputApiKey },
       });
 
-      const result = await response.json();
+      if (error) {
+        console.error('Supabase function error:', error);
+        toast({
+          title: "Validation Error",
+          description: error.message || "Failed to validate API key. Please try again.",
+          variant: "destructive",
+        });
+        setIsValidating(false);
+        return;
+      }
 
-      if (!result.valid) {
+      console.log('Validation result:', data);
+
+      if (!data || !data.valid) {
         toast({
           title: "Invalid API Key",
-          description: result.error || "The API key could not be validated. Please check your key and try again.",
+          description: data?.error || "The API key could not be validated. Please check your key and try again.",
           variant: "destructive",
         });
         setIsValidating(false);
@@ -85,9 +92,10 @@ export const APIKeySetup = ({ onSetup, apiKey }: APIKeySetupProps) => {
         description: "API key validated and configured successfully!",
       });
     } catch (error) {
+      console.error('Validation exception:', error);
       toast({
         title: "Validation Error",
-        description: "Failed to validate API key. Please check your internet connection and try again.",
+        description: error instanceof Error ? error.message : "Failed to validate API key. Please check your internet connection and try again.",
         variant: "destructive",
       });
     } finally {
