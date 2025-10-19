@@ -26,6 +26,34 @@ export class OpenAIService {
     this.apiKey = apiKey;
   }
 
+  async validateApiKey(): Promise<{ valid: boolean; error?: string }> {
+    try {
+      const response = await fetch('https://api.openai.com/v1/models', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error?.message || 'Invalid API key';
+        return {
+          valid: false,
+          error: errorMessage
+        };
+      }
+
+      return { valid: true };
+    } catch (error) {
+      console.error('API Key Validation Error:', error);
+      return {
+        valid: false,
+        error: error instanceof Error ? error.message : 'Failed to validate API key'
+      };
+    }
+  }
+
   async extractTextFromImage(imageBase64: string): Promise<OCRResponse> {
     try {
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
