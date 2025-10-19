@@ -35,30 +35,41 @@ export class ImageOrientationService {
                   text: `You are an expert in image orientation detection for OCR preprocessing. Analyze this image CAREFULLY to determine its current orientation.
 
 CRITICAL INSTRUCTIONS:
-1. Look at how text appears in the image RIGHT NOW
-2. Identify which way the text is currently oriented
-3. Determine what rotation is needed to make text readable (horizontal, left-to-right)
-4. Be extremely precise about rotation direction:
-   - "rotated_90_left" means the image is tilted 90° counterclockwise (text runs vertically, needs clockwise rotation to fix)
-   - "rotated_90_right" means the image is tilted 90° clockwise (text runs vertically, needs counterclockwise rotation to fix)
-   - "rotated_180" or "upside_down" means image is flipped (text is upside down)
-   - "mirrored" means horizontally flipped (text reads backwards)
+1. First, look at the OVERALL text flow - does it run horizontally across the page (left-to-right)?
+2. If text appears horizontal and flows naturally left-to-right, mark as "correct" even if handwriting is messy
+3. ONLY mark as needing correction if text is clearly:
+   - Running vertically (sideways) - then it's rotated 90°
+   - Completely upside down - then it's rotated 180°
+   - Reading backwards - then it's mirrored
+
+4. Rotation definitions:
+   - "correct" = Text runs horizontally, reads left-to-right (MOST COMMON)
+   - "rotated_90_left" = Image tilted 90° counterclockwise, text runs vertically from bottom-to-top
+   - "rotated_90_right" = Image tilted 90° clockwise, text runs vertically from top-to-bottom
+   - "rotated_180" or "upside_down" = Text is upside down, reads right-to-left
+   - "mirrored" = Text reads backwards (horizontally flipped)
+
+CRITICAL WARNING:
+- DO NOT confuse handwriting style with incorrect orientation
+- Cursive, messy, or informal handwriting does NOT mean wrong orientation
+- If you can read the text by looking normally at the screen, it's "correct"
+- If lines of text run horizontally across the page, it's "correct"
 
 ANALYSIS CHECKLIST:
-- Which direction is the text currently facing?
-- Is handwriting/text readable without rotating your head?
-- Are any numbers, letters, or words clearly upside down or sideways?
-- What specific rotation would make this readable?
+✓ Are the lines of text horizontal (running across the page)?
+✓ Does the text read naturally from left to right?
+✓ Can you make out words without tilting your head?
+✓ If YES to all above → orientation is "correct"
 
 Respond with ONLY a JSON object:
 {
   "needsCorrection": true/false,
   "orientation": "correct" | "upside_down" | "rotated_90_left" | "rotated_90_right" | "mirrored" | "rotated_180",
   "confidence": 0.0-1.0,
-  "reasoning": "Detailed explanation: describe what you see and why you chose this orientation. Include specific observations about text direction."
+  "reasoning": "Detailed explanation: First state if lines run horizontally or vertically. Then explain your decision."
 }
 
-Be conservative: if confidence is below 0.7, mark as "correct" to avoid wrong corrections.`
+DEFAULT TO "correct" unless you are absolutely certain (confidence > 0.85) the image needs rotation.`
                 },
                 {
                   type: 'image_url',
@@ -105,7 +116,7 @@ Be conservative: if confidence is below 0.7, mark as "correct" to avoid wrong co
         };
       }
 
-      if (parsedResult.confidence < 0.7) {
+      if (parsedResult.confidence < 0.85) {
         console.warn('Low confidence orientation detection, skipping correction:', parsedResult);
         return {
           success: true,

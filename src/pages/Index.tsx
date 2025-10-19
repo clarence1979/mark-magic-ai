@@ -165,7 +165,7 @@ const Index = () => {
         updateProcessingStep('orientation', 'completed');
         setCurrentProgress(15);
 
-        if (orientationResponse.confidence && orientationResponse.confidence < 0.7) {
+        if (orientationResponse.confidence && orientationResponse.confidence < 0.85) {
           console.log('Orientation check skipped due to low confidence:', orientationResponse.reasoning);
         }
       }
