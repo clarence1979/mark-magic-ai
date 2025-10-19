@@ -10,6 +10,10 @@ interface PlagiarismResult {
   matches: PlagiarismMatch[];
   isHighRisk: boolean;
   summary: string;
+  aiDetection?: {
+    isAIGenerated: boolean;
+    confidence: number;
+  };
 }
 
 interface PlagiarismCheckResponse {
@@ -18,15 +22,27 @@ interface PlagiarismCheckResponse {
   error?: string;
 }
 
+import { AIDetectionService, AIDetectionResult } from './aiDetectionService';
+
 export class PlagiarismService {
   private apiKey: string;
+  private aiDetectionService: AIDetectionService;
 
   constructor(apiKey: string) {
     this.apiKey = apiKey;
+    this.aiDetectionService = new AIDetectionService();
   }
 
-  async checkPlagiarism(text: string): Promise<PlagiarismCheckResponse> {
+  async checkPlagiarism(text: string, includeAIDetection: boolean = true): Promise<PlagiarismCheckResponse> {
     try {
+      let aiDetectionResult: AIDetectionResult | undefined;
+
+      if (includeAIDetection && text.length >= 100) {
+        const aiResponse = await this.aiDetectionService.detectAIText(text);
+        if (aiResponse.success && aiResponse.result) {
+          aiDetectionResult = aiResponse.result;
+        }
+      }
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -111,7 +127,11 @@ IMPORTANT:
             overallSimilarity: parsedResult.overallSimilarity,
             matches: Array.isArray(parsedResult.matches) ? parsedResult.matches : [],
             isHighRisk: parsedResult.isHighRisk === true,
-            summary: parsedResult.summary || 'Plagiarism check completed'
+            summary: parsedResult.summary || 'Plagiarism check completed',
+            aiDetection: aiDetectionResult ? {
+              isAIGenerated: aiDetectionResult.isAIGenerated,
+              confidence: aiDetectionResult.confidence
+            } : undefined
           }
         };
       } catch (parseError) {
@@ -123,7 +143,11 @@ IMPORTANT:
             overallSimilarity: 0,
             matches: [],
             isHighRisk: false,
-            summary: 'Unable to perform detailed plagiarism analysis. Manual review recommended.'
+            summary: 'Unable to perform detailed plagiarism analysis. Manual review recommended.',
+            aiDetection: aiDetectionResult ? {
+              isAIGenerated: aiDetectionResult.isAIGenerated,
+              confidence: aiDetectionResult.confidence
+            } : undefined
           }
         };
       }

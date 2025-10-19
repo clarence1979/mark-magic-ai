@@ -7,6 +7,7 @@ import { FileText, Download, CheckCircle, AlertTriangle, XCircle, FileDown } fro
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { PlagiarismResult } from '@/services/plagiarismService';
+import { AIDetectionResult } from '@/services/aiDetectionService';
 
 interface MarkingResult {
   question: string;
@@ -27,6 +28,7 @@ interface MarkingResultsProps {
   maxTotalMarks: number;
   overallFeedback: string;
   plagiarismResult?: PlagiarismResult;
+  aiDetectionResult?: AIDetectionResult;
 }
 
 export const MarkingResults = ({
@@ -35,7 +37,8 @@ export const MarkingResults = ({
   totalMarks,
   maxTotalMarks,
   overallFeedback,
-  plagiarismResult
+  plagiarismResult,
+  aiDetectionResult
 }: MarkingResultsProps) => {
   console.log('MarkingResults rendering with:', { 
     resultsCount: results?.length, 
@@ -137,6 +140,9 @@ export const MarkingResults = ({
     if (!plagiarismResult) {
       console.log('No plagiarism result available for PDF export');
     }
+    if (!aiDetectionResult) {
+      console.log('No AI detection result available for PDF export');
+    }
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
@@ -200,6 +206,68 @@ export const MarkingResults = ({
         });
       }
       yPosition += 10;
+    }
+
+    // AI Detection Section
+    if (aiDetectionResult) {
+      checkAddPage(50);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('AI Text Detection', margin, yPosition);
+      yPosition += 10;
+
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Classification: ${aiDetectionResult.isAIGenerated ? 'AI-Generated' : 'Human-Written'}`, margin, yPosition);
+      yPosition += lineHeight;
+      doc.text(`Confidence: ${Math.round(aiDetectionResult.confidence)}%`, margin, yPosition);
+      yPosition += lineHeight + 5;
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Statistical Metrics:', margin, yPosition);
+      yPosition += lineHeight + 2;
+
+      doc.setFont('helvetica', 'normal');
+      const metrics = [
+        `Perplexity: ${aiDetectionResult.metrics.perplexity.toFixed(2)}`,
+        `Burstiness: ${aiDetectionResult.metrics.burstiness.toFixed(3)}`,
+        `Type-Token Ratio: ${aiDetectionResult.metrics.typeTokenRatio.toFixed(3)}`,
+        `Cross-Entropy: ${aiDetectionResult.metrics.crossEntropy.toFixed(2)}`,
+        `Sentence Variance: ${aiDetectionResult.metrics.sentenceVariance.toFixed(2)}`,
+        `Fano Factor: ${aiDetectionResult.metrics.fanoFactor.toFixed(2)}`
+      ];
+
+      metrics.forEach(metric => {
+        checkAddPage(10);
+        doc.text(`• ${metric}`, margin + 5, yPosition);
+        yPosition += lineHeight;
+      });
+      yPosition += 5;
+
+      if (aiDetectionResult.suspiciousWords.length > 0) {
+        checkAddPage(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Suspicious AI Words:', margin, yPosition);
+        yPosition += lineHeight + 2;
+
+        doc.setFont('helvetica', 'normal');
+        const wordsText = aiDetectionResult.suspiciousWords
+          .map(w => `${w.word} (${w.count}x)`)
+          .join(', ');
+        const wordsLines = doc.splitTextToSize(wordsText, pageWidth - 2 * margin);
+        doc.text(wordsLines, margin + 5, yPosition);
+        yPosition += wordsLines.length * lineHeight + 5;
+      }
+
+      checkAddPage(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Explanation:', margin, yPosition);
+      yPosition += lineHeight + 2;
+
+      doc.setFont('helvetica', 'normal');
+      const explanationLines = doc.splitTextToSize(aiDetectionResult.explanation, pageWidth - 2 * margin);
+      doc.text(explanationLines, margin, yPosition);
+      yPosition += explanationLines.length * lineHeight + 10;
     }
 
     // Overall Score Section

@@ -5,6 +5,7 @@ import { MarkingSchemeInput } from '@/components/MarkingSchemeInput';
 import { ProcessingStatus } from '@/components/ProcessingStatus';
 import { MarkingResults } from '@/components/MarkingResults';
 import { PlagiarismResults } from '@/components/PlagiarismResults';
+import { AIDetectionResults } from '@/components/AIDetectionResults';
 import { PrivacyPolicy } from '@/components/PrivacyPolicy';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GraduationCap, Settings, Upload, Zap, CheckCircle, Shield, BookOpen } from 'lucide-react';
 import { OpenAIService } from '@/services/openaiService';
 import { PlagiarismService, PlagiarismResult } from '@/services/plagiarismService';
+import { AIDetectionService, AIDetectionResult } from '@/services/aiDetectionService';
 import { ImageOrientationService } from '@/services/imageOrientationService';
 import { useToast } from '@/hooks/use-toast';
 import { cache } from '@/services/apiKeyCache';
@@ -35,6 +37,7 @@ const Index = () => {
   const [isSchemeGenerated, setIsSchemeGenerated] = useState(false);
   const [markingResults, setMarkingResults] = useState<any>(null);
   const [plagiarismResult, setPlagiarismResult] = useState<PlagiarismResult | null>(null);
+  const [aiDetectionResult, setAiDetectionResult] = useState<AIDetectionResult | null>(null);
   const [orientationCorrected, setOrientationCorrected] = useState<boolean>(false);
   const [originalOrientation, setOriginalOrientation] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -89,6 +92,7 @@ const Index = () => {
     setOcrText('');
     setMarkingResults(null);
     setPlagiarismResult(null);
+    setAiDetectionResult(null);
     setOrientationCorrected(false);
     setOriginalOrientation(null);
     setCurrentFileIndex(null);
@@ -253,20 +257,33 @@ const Index = () => {
     setIsProcessing(true);
     setCurrentProgress(0);
 
-    // Check plagiarism first
+    // Check plagiarism and AI detection
     updateProcessingStep('plagiarism', 'processing');
     try {
       const plagiarismService = new PlagiarismService(apiKey);
-      const plagiarismResponse = await plagiarismService.checkPlagiarism(ocrText);
+      const plagiarismResponse = await plagiarismService.checkPlagiarism(ocrText, true);
 
       if (plagiarismResponse.success && plagiarismResponse.result) {
         setPlagiarismResult(plagiarismResponse.result);
+
+        if (plagiarismResponse.result.aiDetection) {
+          const aiDetectionService = new AIDetectionService();
+          const fullAIResponse = await aiDetectionService.detectAIText(ocrText);
+          if (fullAIResponse.success && fullAIResponse.result) {
+            setAiDetectionResult(fullAIResponse.result);
+          }
+        }
+
         updateProcessingStep('plagiarism', 'completed');
         setCurrentProgress(25);
 
+        const aiWarning = plagiarismResponse.result.aiDetection?.isAIGenerated
+          ? ` | ${Math.round(plagiarismResponse.result.aiDetection.confidence)}% AI-generated`
+          : '';
+
         toast({
-          title: "Plagiarism Check Complete",
-          description: `${plagiarismResponse.result.overallSimilarity}% similarity detected`,
+          title: "Plagiarism & AI Check Complete",
+          description: `${plagiarismResponse.result.overallSimilarity}% similarity${aiWarning}`,
         });
       } else {
         updateProcessingStep('plagiarism', 'completed');
@@ -648,6 +665,7 @@ const Index = () => {
                           console.log('Start New clicked - resetting all state');
                           setMarkingResults(null);
                           setPlagiarismResult(null);
+                          setAiDetectionResult(null);
                           setOcrText('');
                           setMarkingScheme('');
                           setSelectedFiles([]);
@@ -680,6 +698,10 @@ const Index = () => {
                             <PlagiarismResults result={plagiarismResult} />
                           )}
 
+                          {aiDetectionResult && (
+                            <AIDetectionResults result={aiDetectionResult} />
+                          )}
+
                           {(() => {
                             console.log('About to render MarkingResults component');
                             return null;
@@ -691,6 +713,7 @@ const Index = () => {
                             maxTotalMarks={markingResults.maxTotalMarks || 0}
                             overallFeedback={markingResults.overallFeedback || ''}
                             plagiarismResult={plagiarismResult || undefined}
+                            aiDetectionResult={aiDetectionResult || undefined}
                           />
                         </div>
                       ) : (
