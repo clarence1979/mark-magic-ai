@@ -4,12 +4,14 @@ import { FileUpload } from '@/components/FileUpload';
 import { MarkingSchemeInput } from '@/components/MarkingSchemeInput';
 import { ProcessingStatus } from '@/components/ProcessingStatus';
 import { MarkingResults } from '@/components/MarkingResults';
+import { PlagiarismResults } from '@/components/PlagiarismResults';
 import { PrivacyPolicy } from '@/components/PrivacyPolicy';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GraduationCap, Settings, Upload, Zap, CheckCircle, Shield, BookOpen } from 'lucide-react';
 import { OpenAIService } from '@/services/openaiService';
+import { PlagiarismService, PlagiarismResult } from '@/services/plagiarismService';
 import { useToast } from '@/hooks/use-toast';
 import { cache } from '@/services/apiKeyCache';
 import heroBackground from '@/assets/hero-background.jpg';
@@ -31,11 +33,13 @@ const Index = () => {
   const [markingScheme, setMarkingScheme] = useState<string>('');
   const [isSchemeGenerated, setIsSchemeGenerated] = useState(false);
   const [markingResults, setMarkingResults] = useState<any>(null);
+  const [plagiarismResult, setPlagiarismResult] = useState<PlagiarismResult | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentProgress, setCurrentProgress] = useState(0);
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
     { id: 'ocr', label: 'Extracting text from image', status: 'pending' },
     { id: 'scheme', label: 'Processing marking scheme', status: 'pending' },
+    { id: 'plagiarism', label: 'Checking for plagiarism', status: 'pending' },
     { id: 'marking', label: 'Marking student work', status: 'pending' },
   ]);
 
@@ -80,6 +84,7 @@ const Index = () => {
     setSelectedFiles(files);
     setOcrText('');
     setMarkingResults(null);
+    setPlagiarismResult(null);
     setCurrentFileIndex(null);
     // Auto-advance to process tab when files are selected
     setActiveTab('process');
@@ -87,6 +92,7 @@ const Index = () => {
     setProcessingSteps([
       { id: 'ocr', label: 'Extracting text from image', status: 'pending' },
       { id: 'scheme', label: 'Processing marking scheme', status: 'pending' },
+      { id: 'plagiarism', label: 'Checking for plagiarism', status: 'pending' },
       { id: 'marking', label: 'Marking student work', status: 'pending' },
     ]);
   };
@@ -186,14 +192,14 @@ const Index = () => {
 
   const handleStartMarking = async () => {
     console.log('=== MARKING PROCESS START ===');
-    console.log('State check:', { 
-      ocrText: ocrText?.length || 0, 
-      markingScheme: markingScheme?.length || 0, 
+    console.log('State check:', {
+      ocrText: ocrText?.length || 0,
+      markingScheme: markingScheme?.length || 0,
       apiKey: apiKey?.length || 0,
       activeTab,
-      isProcessing 
+      isProcessing
     });
-    
+
     if (!ocrText || !markingScheme || !apiKey) {
       console.log('Missing required data - aborting');
       toast({
@@ -207,12 +213,43 @@ const Index = () => {
     console.log('Starting processing...');
     setIsProcessing(true);
     setCurrentProgress(0);
+
+    // Check plagiarism first
+    updateProcessingStep('plagiarism', 'processing');
+    try {
+      const plagiarismService = new PlagiarismService(apiKey);
+      const plagiarismResponse = await plagiarismService.checkPlagiarism(ocrText);
+
+      if (plagiarismResponse.success && plagiarismResponse.result) {
+        setPlagiarismResult(plagiarismResponse.result);
+        updateProcessingStep('plagiarism', 'completed');
+        setCurrentProgress(25);
+
+        toast({
+          title: "Plagiarism Check Complete",
+          description: `${plagiarismResponse.result.overallSimilarity}% similarity detected`,
+        });
+      } else {
+        updateProcessingStep('plagiarism', 'completed');
+        setCurrentProgress(25);
+        toast({
+          title: "Plagiarism Check Complete",
+          description: "Unable to perform detailed analysis",
+          variant: "default",
+        });
+      }
+    } catch (error) {
+      console.error('Plagiarism Check Error:', error);
+      updateProcessingStep('plagiarism', 'completed');
+      setCurrentProgress(25);
+    }
+
     updateProcessingStep('marking', 'processing');
 
     try {
       console.log('Creating OpenAI service...');
       const openaiService = new OpenAIService(apiKey);
-      setCurrentProgress(50);
+      setCurrentProgress(60);
       
       console.log('Sending request to OpenAI...');
       console.log('OCR Text preview:', ocrText.substring(0, 100));
@@ -550,10 +587,11 @@ const Index = () => {
                           AI analysis and feedback for the student work
                         </p>
                       </div>
-                      <Button 
+                      <Button
                         onClick={() => {
                           console.log('Start New clicked - resetting all state');
                           setMarkingResults(null);
+                          setPlagiarismResult(null);
                           setOcrText('');
                           setMarkingScheme('');
                           setSelectedFiles([]);
@@ -566,13 +604,13 @@ const Index = () => {
                       </Button>
                     </div>
                     
-                    <div className="min-h-[200px]">
+                    <div className="min-h-[200px] space-y-6">
                       {(() => {
                         console.log('Results tab rendering - markingResults:', !!markingResults);
                         return null;
                       })()}
                       {markingResults ? (
-                        <div>
+                        <div className="space-y-6">
                           <div className="mb-4 p-3 bg-success/10 border border-success/20 rounded-lg">
                             <p className="text-sm text-success font-medium">
                               ✓ Marking Complete: {markingResults.results?.length || 0} question(s) processed
@@ -581,6 +619,11 @@ const Index = () => {
                               Score: {markingResults.totalMarks || 0}/{markingResults.maxTotalMarks || 0}
                             </p>
                           </div>
+
+                          {plagiarismResult && (
+                            <PlagiarismResults result={plagiarismResult} />
+                          )}
+
                           {(() => {
                             console.log('About to render MarkingResults component');
                             return null;
@@ -591,6 +634,7 @@ const Index = () => {
                             totalMarks={markingResults.totalMarks || 0}
                             maxTotalMarks={markingResults.maxTotalMarks || 0}
                             overallFeedback={markingResults.overallFeedback || ''}
+                            plagiarismResult={plagiarismResult || undefined}
                           />
                         </div>
                       ) : (

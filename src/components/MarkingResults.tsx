@@ -6,6 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { FileText, Download, CheckCircle, AlertTriangle, XCircle, FileDown } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { PlagiarismResult } from '@/services/plagiarismService';
 
 interface MarkingResult {
   question: string;
@@ -25,14 +26,16 @@ interface MarkingResultsProps {
   totalMarks: number;
   maxTotalMarks: number;
   overallFeedback: string;
+  plagiarismResult?: PlagiarismResult;
 }
 
-export const MarkingResults = ({ 
-  results, 
-  ocrText, 
-  totalMarks, 
-  maxTotalMarks, 
-  overallFeedback 
+export const MarkingResults = ({
+  results,
+  ocrText,
+  totalMarks,
+  maxTotalMarks,
+  overallFeedback,
+  plagiarismResult
 }: MarkingResultsProps) => {
   console.log('MarkingResults rendering with:', { 
     resultsCount: results?.length, 
@@ -131,6 +134,9 @@ export const MarkingResults = ({
   };
 
   const exportToPDF = () => {
+    if (!plagiarismResult) {
+      console.log('No plagiarism result available for PDF export');
+    }
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
@@ -159,6 +165,42 @@ export const MarkingResults = ({
     doc.setFont('helvetica', 'normal');
     doc.text(`Date: ${new Date().toLocaleDateString()}`, pageWidth / 2, yPosition, { align: 'center' });
     yPosition += 15;
+
+    // Plagiarism Section
+    if (plagiarismResult) {
+      checkAddPage(40);
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Plagiarism Detection', margin, yPosition);
+      yPosition += 10;
+
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Overall Similarity: ${plagiarismResult.overallSimilarity}%`, margin, yPosition);
+      yPosition += lineHeight;
+      doc.text(`Risk Level: ${plagiarismResult.isHighRisk ? 'High' : 'Low'}`, margin, yPosition);
+      yPosition += lineHeight;
+      doc.text(`Summary: ${plagiarismResult.summary}`, margin, yPosition);
+      yPosition += lineHeight + 5;
+
+      if (plagiarismResult.matches.length > 0) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Detected Matches:', margin, yPosition);
+        yPosition += lineHeight + 2;
+
+        plagiarismResult.matches.forEach((match, idx) => {
+          checkAddPage(25);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`${idx + 1}. ${match.source} (${match.similarity}% match)`, margin + 5, yPosition);
+          yPosition += lineHeight;
+          const matchLines = doc.splitTextToSize(`   "${match.matchedText}"`, pageWidth - 2 * margin - 10);
+          doc.setFont('helvetica', 'italic');
+          doc.text(matchLines, margin + 10, yPosition);
+          yPosition += matchLines.length * lineHeight + 5;
+        });
+      }
+      yPosition += 10;
+    }
 
     // Overall Score Section
     doc.setFontSize(16);
