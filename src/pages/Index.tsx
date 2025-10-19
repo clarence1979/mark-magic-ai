@@ -415,20 +415,25 @@ const Index = () => {
             </h1>
           </div>
           <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-4 sm:mb-6 max-w-3xl mx-auto px-2">
-            Transform handwritten student work into detailed assessments with AI-powered OCR and intelligent marking
+            AI-powered marking assistant that extracts text from handwritten student work, automatically grades against your marking scheme,
+            detects plagiarism, and identifies AI-generated content - saving educators hours of assessment time
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 text-sm">
             <div className="flex items-center gap-2 justify-center">
               <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
-              <span className="text-foreground font-medium">Upload & Extract</span>
+              <span className="text-foreground font-medium">OCR Extraction</span>
             </div>
             <div className="flex items-center gap-2 justify-center">
               <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
-              <span className="text-foreground font-medium">AI Analysis</span>
+              <span className="text-foreground font-medium">Auto-Grading</span>
+            </div>
+            <div className="flex items-center gap-2 justify-center">
+              <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
+              <span className="text-foreground font-medium">Plagiarism Check</span>
             </div>
             <div className="flex items-center gap-2 justify-center">
               <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
-              <span className="text-foreground font-medium">Instant Results</span>
+              <span className="text-foreground font-medium">AI Detection</span>
             </div>
           </div>
         </div>
@@ -856,27 +861,66 @@ const Index = () => {
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="how-it-works" className="p-4 sm:p-6 mt-0">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Upload className="w-6 h-6 text-primary" />
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+                      <div className="text-center">
+                        <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Upload className="w-6 h-6 text-primary" />
+                        </div>
+                        <h4 className="font-medium text-foreground mb-2">1. Upload Work</h4>
+                        <p className="text-sm text-muted-foreground">Upload handwritten assignments as images, PDFs, or DOCX files</p>
                       </div>
-                      <h4 className="font-medium text-foreground mb-2">1. Upload Student Work</h4>
-                      <p className="text-sm text-muted-foreground">Upload handwritten assignments as images, PDFs, or DOCX files. Camera capture supported.</p>
+                      <div className="text-center">
+                        <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Zap className="w-6 h-6 text-primary" />
+                        </div>
+                        <h4 className="font-medium text-foreground mb-2">2. OCR Extraction</h4>
+                        <p className="text-sm text-muted-foreground">AI extracts text from handwriting with high accuracy</p>
+                      </div>
+                      <div className="text-center">
+                        <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <CheckCircle className="w-6 h-6 text-primary" />
+                        </div>
+                        <h4 className="font-medium text-foreground mb-2">3. Auto-Grading</h4>
+                        <p className="text-sm text-muted-foreground">Marks against your scheme with detailed feedback</p>
+                      </div>
+                      <div className="text-center">
+                        <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <Shield className="w-6 h-6 text-primary" />
+                        </div>
+                        <h4 className="font-medium text-foreground mb-2">4. Integrity Checks</h4>
+                        <p className="text-sm text-muted-foreground">Detects plagiarism and AI-generated content</p>
+                      </div>
                     </div>
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <Zap className="w-6 h-6 text-primary" />
-                      </div>
-                      <h4 className="font-medium text-foreground mb-2">2. AI Text Extraction</h4>
-                      <p className="text-sm text-muted-foreground">Advanced OCR extracts text from handwriting with high accuracy, including mathematical notation.</p>
-                    </div>
-                    <div className="text-center">
-                      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <CheckCircle className="w-6 h-6 text-primary" />
-                      </div>
-                      <h4 className="font-medium text-foreground mb-2">3. Intelligent Marking</h4>
-                      <p className="text-sm text-muted-foreground">Generate marking schemes automatically or use custom ones with detailed feedback and scores.</p>
+
+                    <div className="bg-muted/30 p-4 rounded-lg border">
+                      <h4 className="font-semibold text-foreground mb-3">Key Features:</h4>
+                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm text-muted-foreground">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                          <span>Single & batch processing modes</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                          <span>Custom or auto-generated marking schemes</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                          <span>Plagiarism detection with similarity scores</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                          <span>AI content detection and analysis</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                          <span>PDF export with comprehensive reports</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                          <span>Mathematical notation support</span>
+                        </li>
+                      </ul>
                     </div>
                   </div>
                 </TabsContent>
@@ -885,20 +929,37 @@ const Index = () => {
                   <div className="space-y-4">
                     <div>
                       <h3 className="text-lg font-semibold text-primary mb-2">Security & Compliance</h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 mb-4">
                         <div className="text-center p-3 bg-success/5 rounded-lg border border-success/20">
-                          <div className="text-xs font-medium text-success">✓ Zero Server Storage</div>
+                          <div className="text-xs font-medium text-success">✓ Australian Privacy Act</div>
                         </div>
                         <div className="text-center p-3 bg-success/5 rounded-lg border border-success/20">
-                          <div className="text-xs font-medium text-success">✓ FERPA/COPPA Aligned</div>
+                          <div className="text-xs font-medium text-success">✓ Encrypted Storage</div>
                         </div>
                         <div className="text-center p-3 bg-success/5 rounded-lg border border-success/20">
-                          <div className="text-xs font-medium text-success">✓ Direct API Integration</div>
+                          <div className="text-xs font-medium text-success">✓ Sydney Data Centre</div>
+                        </div>
+                        <div className="text-center p-3 bg-success/5 rounded-lg border border-success/20">
+                          <div className="text-xs font-medium text-success">✓ Secure API Integration</div>
                         </div>
                       </div>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Client-side processing ensures student data never touches our servers. All processing happens directly through OpenAI's secure API.
-                      </p>
+
+                      <div className="space-y-3">
+                        <div className="bg-muted/30 p-4 rounded-lg border">
+                          <h4 className="font-semibold text-foreground mb-2 text-sm">Single Assessment Mode:</h4>
+                          <p className="text-xs text-muted-foreground">
+                            Zero server storage - all processing happens client-side with direct OpenAI API calls. No student data stored on our servers.
+                          </p>
+                        </div>
+
+                        <div className="bg-muted/30 p-4 rounded-lg border">
+                          <h4 className="font-semibold text-foreground mb-2 text-sm">Batch Processing Mode:</h4>
+                          <p className="text-xs text-muted-foreground">
+                            Secure Australian database (Supabase Sydney region) with encryption at rest and in transit. Row-level security policies protect your data.
+                            Schools can request deletion at any time.
+                          </p>
+                        </div>
+                      </div>
                     </div>
                     <div className="flex justify-center">
                       <PrivacyPolicy />
@@ -951,11 +1012,11 @@ const Index = () => {
               <p className="text-sm font-medium text-foreground">
                 Magic Marking AI Tool
               </p>
-              <p className="text-xs text-muted-foreground">
-                Empowering educators with intelligent assessment technology
+              <p className="text-xs text-muted-foreground max-w-2xl mx-auto">
+                AI-powered marking assistant for Australian educators: OCR extraction, auto-grading, plagiarism detection, and AI content identification
               </p>
               <p className="text-xs text-muted-foreground">
-                Designed for Australian schools • Compliant with Privacy Act 1988
+                Privacy Act 1988 Compliant • Australian Hosted • Educator Supervised
               </p>
             </div>
           </div>
