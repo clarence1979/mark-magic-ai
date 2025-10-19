@@ -436,7 +436,32 @@ const Index = () => {
 
       <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
-          
+
+          {/* Important Notice for Australian Schools */}
+          <Card className="border-warning/50 bg-warning/5">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm text-warning">Important Notice for Educators</h3>
+                  <div className="text-xs text-muted-foreground space-y-1">
+                    <p>
+                      <strong>AI Assistance Tool:</strong> This tool uses OpenAI's GPT-4 API for marking assistance. All student work is sent to OpenAI for processing.
+                      Results should be reviewed by qualified educators before finalizing grades.
+                    </p>
+                    <p>
+                      <strong>Data Privacy:</strong> Single assessments are processed without server storage. Batch processing stores data in our Australian database.
+                      Schools must ensure OpenAI API usage complies with local privacy requirements.
+                    </p>
+                    <p className="pt-1">
+                      Review our <PrivacyPolicy /> for full details on data handling and compliance with Australian privacy laws.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Quick Setup Bar - Only show when API key is missing */}
           {!apiKey && (
             <Card className="border-warning/50 bg-warning/5">
@@ -651,6 +676,23 @@ const Index = () => {
                       <p className="text-sm text-muted-foreground mb-4">
                         Process multiple student assessments at once with a single marking scheme
                       </p>
+                    </div>
+
+                    <div className="bg-warning/5 border border-warning/20 p-4 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <Shield className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
+                        <div className="space-y-2">
+                          <h4 className="font-semibold text-sm text-warning">Data Storage Notice</h4>
+                          <p className="text-xs text-muted-foreground">
+                            Batch processing stores student data in our secure Australian database (Supabase Sydney region) to facilitate multi-student operations and result exports.
+                            This differs from single assessment mode where no data is stored server-side.
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            All data is encrypted and protected under Australian privacy laws. Schools can request data deletion at any time.
+                            Please review our <Button variant="link" className="h-auto p-0 text-xs" onClick={() => setActiveTab('batch')}>Privacy Policy</Button> before proceeding.
+                          </p>
+                        </div>
+                      </div>
                     </div>
 
                     {!batchJobId ? (
@@ -904,12 +946,16 @@ const Index = () => {
               </form>
             </div>
             
-            <div className="text-center space-y-2">
+            <div className="text-center space-y-3">
+              <PrivacyPolicy />
               <p className="text-sm font-medium text-foreground">
                 Magic Marking AI Tool
               </p>
               <p className="text-xs text-muted-foreground">
                 Empowering educators with intelligent assessment technology
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Designed for Australian schools • Compliant with Privacy Act 1988
               </p>
             </div>
           </div>

@@ -110,21 +110,26 @@ export const PrivacyPolicy = () => {
 
                   <section>
                     <h4 className="font-medium mb-2">4. Data Storage and Security</h4>
-                    <div className="bg-success/5 border border-success/20 p-3 rounded-lg mb-3">
-                      <h5 className="text-sm font-medium text-success mb-1">Zero Server Storage Policy</h5>
+                    <div className="bg-warning/5 border border-warning/20 p-3 rounded-lg mb-3">
+                      <h5 className="text-sm font-medium text-warning mb-1">Data Storage Policy</h5>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        <strong>Single Assessment Mode:</strong> Student data is processed client-side and sent directly to OpenAI's API. No student information is stored on our servers.
+                      </p>
                       <p className="text-sm text-muted-foreground">
-                        Student data is processed client-side and sent directly to OpenAI's API. No student information is stored on our servers.
+                        <strong>Batch Processing Mode:</strong> When using batch processing features, student assessment data, extracted text, marking results, and related information ARE stored in our secure Supabase database to facilitate batch operations and result exports. This data is stored in Australia and protected under Australian privacy laws.
                       </p>
                     </div>
                     <div className="space-y-2">
                       <h5 className="text-sm font-medium">Security Measures:</h5>
                       <ul className="text-sm text-muted-foreground list-disc list-inside ml-4 space-y-1">
                         <li>TLS/SSL encryption for all data transmission</li>
-                        <li>API keys stored locally in browser (localStorage)</li>
-                        <li>No persistent server-side data storage</li>
-                        <li>Direct API integration with OpenAI (no intermediary storage)</li>
-                        <li>Automatic cache clearing on session end</li>
+                        <li>API keys stored locally in browser (localStorage only)</li>
+                        <li>Supabase database with Row Level Security (RLS) policies</li>
+                        <li>Encrypted data storage at rest and in transit</li>
+                        <li>Australian-hosted database infrastructure (Supabase Sydney region)</li>
+                        <li>Direct API integration with OpenAI (no intermediary storage for single assessments)</li>
                         <li>Regular security assessments and updates</li>
+                        <li>Access controls and authentication mechanisms</li>
                       </ul>
                     </div>
                   </section>
@@ -134,16 +139,21 @@ export const PrivacyPolicy = () => {
                   <section>
                     <h4 className="font-medium mb-2">5. Third-Party Services</h4>
                     <div className="bg-warning/5 border border-warning/20 p-3 rounded-lg mb-3">
-                      <h5 className="text-sm font-medium text-warning mb-1">OpenAI Integration</h5>
+                      <h5 className="text-sm font-medium text-warning mb-1">OpenAI Integration - Important Notice</h5>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        This service uses OpenAI's GPT-4 API for OCR and marking functionality. All student work and responses are sent to OpenAI for processing.
+                      </p>
                       <p className="text-sm text-muted-foreground">
-                        This service uses OpenAI's GPT-4 API for OCR and marking functionality. Data sent to OpenAI is subject to their privacy policy and terms of service.
+                        <strong>OpenAI Data Usage:</strong> As of March 2023, OpenAI states that data submitted via their API is NOT used to train or improve their models unless explicitly opted in. However, schools MUST review OpenAI's current terms of service and privacy policy before use.
                       </p>
                     </div>
                     <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
                       <li>OpenAI API for text extraction and marking analysis</li>
                       <li>Data processing occurs in real-time with immediate response</li>
-                      <li>No long-term data retention by third-party services</li>
-                      <li>Educational institutions should review OpenAI's privacy policy</li>
+                      <li>OpenAI retains API data for 30 days for abuse monitoring (per their policy)</li>
+                      <li>Educational institutions MUST review OpenAI's privacy policy at: https://openai.com/policies/privacy-policy</li>
+                      <li>Schools should ensure OpenAI API usage complies with their local privacy requirements</li>
+                      <li>Supabase database hosting (Australian region) for batch processing data</li>
                     </ul>
                   </section>
 
@@ -151,20 +161,30 @@ export const PrivacyPolicy = () => {
 
                   <section>
                     <h4 className="font-medium mb-2">6. Student Rights and Parental Consent</h4>
+                    <div className="bg-destructive/5 border border-destructive/20 p-3 rounded-lg mb-3">
+                      <h5 className="text-sm font-medium text-destructive mb-1">Australian Schools: Consent Requirements</h5>
+                      <p className="text-sm text-muted-foreground">
+                        Before using this tool, schools must obtain informed consent from parents/guardians for students under 18.
+                        Consent forms should clearly explain that student work will be processed by AI (OpenAI) and stored in databases (for batch processing).
+                      </p>
+                    </div>
                     <div className="space-y-2">
                       <h5 className="text-sm font-medium">For Students Under 18:</h5>
                       <ul className="text-sm text-muted-foreground list-disc list-inside ml-4 space-y-1">
-                        <li>Parental/guardian consent required before use</li>
-                        <li>Schools must obtain appropriate consent forms</li>
+                        <li>Written parental/guardian consent REQUIRED before use</li>
+                        <li>Schools must obtain appropriate consent forms complying with state/territory requirements</li>
+                        <li>Consent must clearly describe AI processing and data storage</li>
                         <li>Parents have the right to access and correct student information</li>
-                        <li>Parents may request deletion of processed data</li>
+                        <li>Parents may request deletion of processed data at any time</li>
+                        <li>Parents can withdraw consent and cease use of the service</li>
                       </ul>
-                      <h5 className="text-sm font-medium mt-3">Student Rights Include:</h5>
+                      <h5 className="text-sm font-medium mt-3">Student Rights Under Australian Privacy Principles:</h5>
                       <ul className="text-sm text-muted-foreground list-disc list-inside ml-4 space-y-1">
-                        <li>Right to know how their information is being used</li>
-                        <li>Right to access their personal information</li>
+                        <li>Right to know how their information is being used and disclosed</li>
+                        <li>Right to access their personal information held by the school</li>
                         <li>Right to request correction of inaccurate information</li>
-                        <li>Right to complain about privacy breaches</li>
+                        <li>Right to complain about privacy breaches to the school or OAIC</li>
+                        <li>Right to understand third-party data processing (OpenAI)</li>
                       </ul>
                     </div>
                   </section>
@@ -173,13 +193,35 @@ export const PrivacyPolicy = () => {
 
                   <section>
                     <h4 className="font-medium mb-2">7. Data Retention and Deletion</h4>
-                    <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
-                      <li>No server-side data retention - all processing is ephemeral</li>
-                      <li>Local browser data cleared on session end</li>
-                      <li>Schools responsible for managing downloaded results</li>
-                      <li>Immediate data purging after processing completion</li>
-                      <li>No backup copies or archival storage</li>
-                    </ul>
+                    <div className="space-y-3">
+                      <div>
+                        <h5 className="text-sm font-medium">Single Assessment Mode:</h5>
+                        <ul className="text-sm text-muted-foreground list-disc list-inside ml-4 space-y-1">
+                          <li>No server-side data retention - all processing is ephemeral</li>
+                          <li>Local browser data cleared on session end</li>
+                          <li>Immediate data purging after processing completion</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <h5 className="text-sm font-medium">Batch Processing Mode:</h5>
+                        <ul className="text-sm text-muted-foreground list-disc list-inside ml-4 space-y-1">
+                          <li>Student assessment data stored in Supabase database</li>
+                          <li>Data retained for school's operational needs and record-keeping</li>
+                          <li>Schools responsible for requesting data deletion when no longer needed</li>
+                          <li>Data can be exported and then deleted upon request</li>
+                          <li>Automated backup and recovery systems in place</li>
+                          <li>Retention periods should align with school's data governance policies</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <h5 className="text-sm font-medium">Data Deletion Rights:</h5>
+                        <ul className="text-sm text-muted-foreground list-disc list-inside ml-4 space-y-1">
+                          <li>Schools can request deletion of batch processing data at any time</li>
+                          <li>Complete removal from database and backups within 30 days of request</li>
+                          <li>Downloaded/exported results remain school's responsibility</li>
+                        </ul>
+                      </div>
+                    </div>
                   </section>
 
                   <Separator />
@@ -244,15 +286,21 @@ export const PrivacyPolicy = () => {
                   <section>
                     <h4 className="font-medium mb-2">1. Educational Purpose Only</h4>
                     <div className="bg-warning/5 border border-warning/20 p-3 rounded-lg mb-3">
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground mb-2">
                         <strong>Important:</strong> This tool is designed for educational assistance and should not replace professional educator judgment or assessment practices.
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        <strong>Australian Schools:</strong> This tool is intended as a formative assessment aid. For NAPLAN, HSC, VCE, ATAR, or other high-stakes assessments,
+                        schools must follow official marking procedures and guidelines from relevant educational authorities (ACARA, NESA, VCAA, etc.).
                       </p>
                     </div>
                     <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1">
                       <li>Results require review and validation by qualified educators</li>
-                      <li>Not suitable for high-stakes or formal assessment purposes</li>
+                      <li>Not suitable for high-stakes or formal assessment purposes without human verification</li>
                       <li>Should be used as a supplementary marking aid only</li>
                       <li>Final grading decisions remain with educational professionals</li>
+                      <li>Compliance with Australian Curriculum standards is the school's responsibility</li>
+                      <li>Not endorsed or approved by ACARA, state/territory education departments</li>
                     </ul>
                   </section>
 
