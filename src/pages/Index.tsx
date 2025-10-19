@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GraduationCap, Settings, Upload, Zap, CheckCircle, Shield, BookOpen } from 'lucide-react';
 import { OpenAIService } from '@/services/openaiService';
 import { PlagiarismService, PlagiarismResult } from '@/services/plagiarismService';
+import { ImageOrientationService } from '@/services/imageOrientationService';
 import { useToast } from '@/hooks/use-toast';
 import { cache } from '@/services/apiKeyCache';
 import heroBackground from '@/assets/hero-background.jpg';
@@ -34,9 +35,12 @@ const Index = () => {
   const [isSchemeGenerated, setIsSchemeGenerated] = useState(false);
   const [markingResults, setMarkingResults] = useState<any>(null);
   const [plagiarismResult, setPlagiarismResult] = useState<PlagiarismResult | null>(null);
+  const [orientationCorrected, setOrientationCorrected] = useState<boolean>(false);
+  const [originalOrientation, setOriginalOrientation] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentProgress, setCurrentProgress] = useState(0);
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
+    { id: 'orientation', label: 'Checking image orientation', status: 'pending' },
     { id: 'ocr', label: 'Extracting text from image', status: 'pending' },
     { id: 'scheme', label: 'Processing marking scheme', status: 'pending' },
     { id: 'plagiarism', label: 'Checking for plagiarism', status: 'pending' },
@@ -85,11 +89,14 @@ const Index = () => {
     setOcrText('');
     setMarkingResults(null);
     setPlagiarismResult(null);
+    setOrientationCorrected(false);
+    setOriginalOrientation(null);
     setCurrentFileIndex(null);
     // Auto-advance to process tab when files are selected
     setActiveTab('process');
     // Reset processing steps
     setProcessingSteps([
+      { id: 'orientation', label: 'Checking image orientation', status: 'pending' },
       { id: 'ocr', label: 'Extracting text from image', status: 'pending' },
       { id: 'scheme', label: 'Processing marking scheme', status: 'pending' },
       { id: 'plagiarism', label: 'Checking for plagiarism', status: 'pending' },
@@ -100,11 +107,13 @@ const Index = () => {
   const processFile = async (fileIndex: number) => {
     const file = selectedFiles[fileIndex];
     if (!file) return;
-    
+
     setCurrentFileIndex(fileIndex);
     setOcrText('');
     setMarkingResults(null);
-    
+    setOrientationCorrected(false);
+    setOriginalOrientation(null);
+
     if (!apiKey) {
       toast({
         title: "API Key Required",
@@ -116,20 +125,50 @@ const Index = () => {
 
     setIsProcessing(true);
     setCurrentProgress(0);
+
+    let imageToProcess = await fileToBase64(file);
+
+    // Step 1: Check and correct orientation
+    updateProcessingStep('orientation', 'processing');
+    try {
+      const orientationService = new ImageOrientationService(apiKey);
+      const orientationResponse = await orientationService.checkAndCorrectOrientation(imageToProcess);
+
+      if (orientationResponse.success && orientationResponse.needsCorrection && orientationResponse.correctedImage) {
+        imageToProcess = orientationResponse.correctedImage;
+        setOrientationCorrected(true);
+        setOriginalOrientation(orientationResponse.originalOrientation || 'unknown');
+        updateProcessingStep('orientation', 'completed');
+        setCurrentProgress(15);
+
+        toast({
+          title: "Orientation Corrected",
+          description: `Image was ${orientationResponse.originalOrientation?.replace(/_/g, ' ')} and has been corrected`,
+        });
+      } else {
+        updateProcessingStep('orientation', 'completed');
+        setCurrentProgress(15);
+      }
+    } catch (error) {
+      console.error('Orientation Check Error:', error);
+      updateProcessingStep('orientation', 'completed');
+      setCurrentProgress(15);
+    }
+
+    // Step 2: OCR
     updateProcessingStep('ocr', 'processing');
 
     try {
       const openaiService = new OpenAIService(apiKey);
-      const base64Image = await fileToBase64(file);
-      
-      setCurrentProgress(25);
-      const ocrResponse = await openaiService.extractTextFromImage(base64Image);
+
+      setCurrentProgress(35);
+      const ocrResponse = await openaiService.extractTextFromImage(imageToProcess);
       
       if (ocrResponse.success && ocrResponse.text) {
         setOcrText(ocrResponse.text);
         updateProcessingStep('ocr', 'completed');
         setCurrentProgress(50);
-        
+
         toast({
           title: "OCR Complete",
           description: "Text extracted successfully from the image",
@@ -520,6 +559,23 @@ const Index = () => {
                       />
                     )}
 
+                    {/* Orientation Correction Notice */}
+                    {orientationCorrected && (
+                      <div className="p-4 bg-primary/5 border border-primary/20 rounded-lg">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
+                            <CheckCircle className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-sm mb-1">Image Orientation Corrected</h4>
+                            <p className="text-xs text-muted-foreground">
+                              The uploaded image was detected as <span className="font-medium">{originalOrientation?.replace(/_/g, ' ')}</span> and has been automatically corrected for optimal text extraction.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     {/* OCR Results Preview */}
                     {ocrText && (
                       <div className="space-y-4">
@@ -530,8 +586,8 @@ const Index = () => {
                           </div>
                         </div>
                         <div className="text-center">
-                          <Button 
-                            onClick={() => setActiveTab('mark')} 
+                          <Button
+                            onClick={() => setActiveTab('mark')}
                             size="lg"
                             className="w-full sm:w-auto"
                           >
