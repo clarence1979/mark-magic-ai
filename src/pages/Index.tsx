@@ -12,7 +12,7 @@ import { BatchProcessing } from '@/components/BatchProcessing';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GraduationCap, Settings, Upload, Zap, CheckCircle, Shield, BookOpen, Users } from 'lucide-react';
+import { GraduationCap, Settings, Upload, Zap, CheckCircle, Shield, BookOpen, Users, AlertTriangle } from 'lucide-react';
 import { OpenAIService } from '@/services/openaiService';
 import { PlagiarismService, PlagiarismResult } from '@/services/plagiarismService';
 import { AIDetectionService, AIDetectionResult } from '@/services/aiDetectionService';
