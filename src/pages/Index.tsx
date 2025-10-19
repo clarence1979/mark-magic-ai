@@ -7,10 +7,12 @@ import { MarkingResults } from '@/components/MarkingResults';
 import { PlagiarismResults } from '@/components/PlagiarismResults';
 import { AIDetectionResults } from '@/components/AIDetectionResults';
 import { PrivacyPolicy } from '@/components/PrivacyPolicy';
+import { BatchUpload } from '@/components/BatchUpload';
+import { BatchProcessing } from '@/components/BatchProcessing';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GraduationCap, Settings, Upload, Zap, CheckCircle, Shield, BookOpen } from 'lucide-react';
+import { GraduationCap, Settings, Upload, Zap, CheckCircle, Shield, BookOpen, Users } from 'lucide-react';
 import { OpenAIService } from '@/services/openaiService';
 import { PlagiarismService, PlagiarismResult } from '@/services/plagiarismService';
 import { AIDetectionService, AIDetectionResult } from '@/services/aiDetectionService';
@@ -28,7 +30,7 @@ interface ProcessingStep {
 
 const Index = () => {
   const [apiKey, setApiKey] = useState<string>(() => cache.apiKey);
-  const [activeTab, setActiveTab] = useState('upload'); // Start with upload tab instead of setup
+  const [activeTab, setActiveTab] = useState('upload');
   const [showQuickSetup, setShowQuickSetup] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [currentFileIndex, setCurrentFileIndex] = useState<number | null>(null);
@@ -42,6 +44,8 @@ const Index = () => {
   const [originalOrientation, setOriginalOrientation] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentProgress, setCurrentProgress] = useState(0);
+  const [batchJobId, setBatchJobId] = useState<string | null>(null);
+  const [batchMarkingScheme, setBatchMarkingScheme] = useState<string>('');
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
     { id: 'orientation', label: 'Checking image orientation', status: 'pending' },
     { id: 'ocr', label: 'Extracting text from image', status: 'pending' },
@@ -476,7 +480,7 @@ const Index = () => {
           <Card className="shadow-soft border-primary/20">
             <CardContent className="p-0">
               <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-4 rounded-none rounded-t-lg h-10 sm:h-12">
+                <TabsList className="grid w-full grid-cols-5 rounded-none rounded-t-lg h-10 sm:h-12">
                   <TabsTrigger value="upload" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3">
                     <Upload className="w-3 h-3 sm:w-4 sm:h-4" />
                     <span className="hidden sm:inline">Upload</span>
@@ -500,8 +504,16 @@ const Index = () => {
                     <span className="hidden sm:inline">Mark</span>
                     <span className="sm:hidden">Mk</span>
                   </TabsTrigger>
-                  <TabsTrigger 
-                    value="results" 
+                  <TabsTrigger
+                    value="batch"
+                    className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3"
+                  >
+                    <Users className="w-3 h-3 sm:w-4 sm:h-4" />
+                    <span className="hidden sm:inline">Batch</span>
+                    <span className="sm:hidden">Ba</span>
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="results"
                     disabled={!markingResults}
                     className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm px-2 sm:px-3"
                   >
@@ -631,7 +643,44 @@ const Index = () => {
                     )}
                   </div>
                 </TabsContent>
-                
+
+                <TabsContent value="batch" className="p-4 sm:p-6 mt-0">
+                  <div className="space-y-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-primary mb-2">Batch Processing</h3>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Process multiple student assessments at once with a single marking scheme
+                      </p>
+                    </div>
+
+                    {!batchJobId ? (
+                      <BatchUpload
+                        apiKey={apiKey}
+                        onBatchCreated={(jobId, markingScheme) => {
+                          setBatchJobId(jobId);
+                          setBatchMarkingScheme(markingScheme);
+                          toast({
+                            title: "Batch Ready",
+                            description: "Now upload student assessment files"
+                          });
+                        }}
+                      />
+                    ) : (
+                      <BatchProcessing
+                        batchJobId={batchJobId}
+                        markingSchemeContent={batchMarkingScheme}
+                        apiKey={apiKey}
+                        onComplete={() => {
+                          toast({
+                            title: "All Students Processed",
+                            description: "Export results as CSV or PDF"
+                          });
+                        }}
+                      />
+                    )}
+                  </div>
+                </TabsContent>
+
                 <TabsContent value="mark" className="p-4 sm:p-6 mt-0">
                   <div className="space-y-4">
                     <div>
