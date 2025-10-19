@@ -9,6 +9,7 @@ import { AIDetectionResults } from '@/components/AIDetectionResults';
 import { PrivacyPolicy } from '@/components/PrivacyPolicy';
 import { BatchUpload } from '@/components/BatchUpload';
 import { BatchProcessing } from '@/components/BatchProcessing';
+import { SettingsDialog } from '@/components/SettingsDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -400,11 +401,14 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Hero Section */}
-      <div 
+      <div
         className="relative min-h-[40vh] sm:min-h-[50vh] flex items-center justify-center bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${heroBackground})` }}
       >
         <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-background/90"></div>
+        <div className="absolute top-4 right-4 z-20">
+          <SettingsDialog apiKey={apiKey} onAPIKeySetup={handleAPIKeySetup} />
+        </div>
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
           <div className="flex items-center justify-center gap-4 mb-4 sm:mb-6">
             <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-primary rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
@@ -441,70 +445,6 @@ const Index = () => {
 
       <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
-
-          {/* Important Notice for Australian Schools */}
-          <Card className="border-warning/50 bg-warning/5">
-            <CardContent className="p-4">
-              <div className="flex items-start gap-3">
-                <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-                <div className="space-y-2">
-                  <h3 className="font-semibold text-sm text-warning">Important Notice for Educators</h3>
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <p>
-                      <strong>AI Assistance Tool:</strong> This tool uses OpenAI's GPT-4 API for marking assistance. All student work is sent to OpenAI for processing.
-                      Results should be reviewed by qualified educators before finalizing grades.
-                    </p>
-                    <p>
-                      <strong>Data Privacy:</strong> Single assessments are processed without server storage. Batch processing stores data in our Australian database.
-                      Schools must ensure OpenAI API usage complies with local privacy requirements.
-                    </p>
-                    <p className="pt-1">
-                      Review our <PrivacyPolicy /> for full details on data handling and compliance with Australian privacy laws.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Setup Bar - Only show when API key is missing */}
-          {!apiKey && (
-            <Card className="border-warning/50 bg-warning/5">
-              <CardContent className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 bg-warning/10 rounded-full flex items-center justify-center">
-                    <Settings className="w-4 h-4 text-warning" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-warning">API Key Required</p>
-                    <p className="text-sm text-warning/80">Configure your OpenAI API key to start marking</p>
-                  </div>
-                </div>
-                <Button onClick={() => setShowQuickSetup(true)} variant="outline" size="sm">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Setup API Key
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Quick Setup Modal */}
-          {showQuickSetup && (
-            <Card className="shadow-medium border-primary/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Settings className="w-5 h-5 text-primary" />
-                  Quick API Setup
-                </CardTitle>
-                <CardDescription>
-                  Enter your OpenAI API key to enable AI-powered marking
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <APIKeySetup onSetup={handleAPIKeySetup} apiKey={apiKey} />
-              </CardContent>
-            </Card>
-          )}
 
           {/* Main Workflow Tabs */}
           <Card className="shadow-soft border-primary/20">
