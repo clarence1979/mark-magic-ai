@@ -111,7 +111,6 @@ export const MarkingResults = ({
   };
 
   const gradeInfo = getGradeInfo(percentage);
-  const GradeIcon = gradeInfo.icon;
 
   const exportResults = () => {
     const exportData = {
@@ -426,7 +425,7 @@ export const MarkingResults = ({
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-3">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center ${gradeInfo.bgClass}`}>
-              <GradeIcon className={`w-8 h-8 ${gradeInfo.textClass}`} />
+              {gradeInfo.icon && <gradeInfo.icon className={`w-8 h-8 ${gradeInfo.textClass}`} />}
             </div>
             <div>
               <CardTitle className="text-3xl">
