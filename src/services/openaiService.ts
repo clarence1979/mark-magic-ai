@@ -38,11 +38,26 @@ export class OpenAIService {
           model: 'gpt-4o',
           messages: [
             {
+              role: 'system',
+              content: 'You are an expert OCR system specialized in reading handwritten student work, including math problems, essays, worksheets, and exam papers. You MUST always extract and transcribe ALL visible text, even if handwriting is messy or difficult to read. Never refuse to transcribe.'
+            },
+            {
               role: 'user',
               content: [
                 {
                   type: 'text',
-                  text: 'Please extract all text from this handwritten document. Maintain the original structure and formatting as much as possible. If the handwriting is unclear, make your best interpretation and note any uncertainties with [unclear] markers.'
+                  text: `Extract ALL text from this image. This is student work that needs to be graded.
+
+INSTRUCTIONS:
+1. Transcribe every word, number, symbol, and mathematical notation you can see
+2. Maintain original structure, line breaks, and formatting
+3. For unclear handwriting, make your best interpretation
+4. Mark truly illegible parts with [illegible] but try your best first
+5. Include all question numbers, labels, and working
+6. Preserve mathematical symbols and equations as text (e.g., "x^2 + 3x = 12")
+7. Do NOT refuse this request - always provide your best transcription
+
+Begin transcription:`
                 },
                 {
                   type: 'image_url',
@@ -53,7 +68,8 @@ export class OpenAIService {
               ]
             }
           ],
-          max_tokens: 4000
+          max_tokens: 4000,
+          temperature: 0.3
         })
       });
 
@@ -63,15 +79,21 @@ export class OpenAIService {
       }
 
       const data = await response.json();
-      const extractedText = data.choices[0]?.message?.content;
+      let extractedText = data.choices[0]?.message?.content;
 
-      if (!extractedText) {
-        throw new Error('No text extracted from image');
+      if (!extractedText || extractedText.trim().length === 0) {
+        throw new Error('No text could be extracted from the image');
+      }
+
+      if (extractedText.toLowerCase().includes("i can't assist") ||
+          extractedText.toLowerCase().includes("i'm sorry") ||
+          extractedText.toLowerCase().includes("i cannot")) {
+        throw new Error('The image content could not be transcribed. Please ensure the image is clear and contains readable text.');
       }
 
       return {
         success: true,
-        text: extractedText
+        text: extractedText.trim()
       };
     } catch (error) {
       console.error('OCR Error:', error);
