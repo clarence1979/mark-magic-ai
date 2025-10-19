@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload, FileText, X, Camera, File } from 'lucide-react';
@@ -10,6 +11,7 @@ interface FileUploadProps {
 }
 
 export const FileUpload = ({ onFilesSelect, disabled }: FileUploadProps) => {
+  const isMobile = useIsMobile();
   const [dragActive, setDragActive] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -134,7 +136,7 @@ export const FileUpload = ({ onFilesSelect, disabled }: FileUploadProps) => {
       </CardHeader>
       <CardContent>
         <div
-          className={`border-2 border-dashed rounded-lg p-6 text-center transition-all duration-200 mb-4 ${
+          className={`border-2 border-dashed rounded-lg ${isMobile ? 'p-4' : 'p-6'} text-center transition-all duration-200 mb-4 ${
             dragActive
               ? 'border-primary bg-primary/5'
               : 'border-border hover:border-primary/50'
@@ -145,26 +147,32 @@ export const FileUpload = ({ onFilesSelect, disabled }: FileUploadProps) => {
           onDrop={handleDrop}
           onClick={() => !disabled && fileInputRef.current?.click()}
         >
-          <Upload className={`w-10 h-10 mx-auto mb-3 ${dragActive ? 'text-primary' : 'text-muted-foreground'}`} />
-          <h3 className="text-lg font-medium mb-2">
-            {dragActive ? 'Drop your files here' : 'Choose files or drag & drop'}
+          <Upload className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} mx-auto mb-3 ${dragActive ? 'text-primary' : 'text-muted-foreground'}`} />
+          <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-medium mb-2`}>
+            {dragActive ? 'Drop your files here' : isMobile ? 'Choose files or take a photo' : 'Choose files or drag & drop'}
           </h3>
-          <p className="text-muted-foreground mb-4">
-            Support for Images (JPG, PNG, HEIC), PDF, and DOCX files
+          <p className={`text-muted-foreground ${isMobile ? 'text-xs mb-3' : 'text-sm mb-4'}`}>
+            {isMobile ? 'Images, PDF, DOCX' : 'Support for Images (JPG, PNG, HEIC), PDF, and DOCX files'}
           </p>
           
           <div className="flex gap-2 justify-center flex-wrap">
-            <Button variant="outline" disabled={disabled} onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}>
+            <Button
+              variant="outline"
+              disabled={disabled}
+              onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+              className={isMobile ? "text-sm px-3" : ""}
+            >
               <Upload className="w-4 h-4 mr-2" />
               Select Files
             </Button>
-            <Button 
-              variant="outline" 
-              disabled={disabled} 
+            <Button
+              variant="outline"
+              disabled={disabled}
               onClick={(e) => { e.stopPropagation(); cameraInputRef.current?.click(); }}
+              className={isMobile ? "text-sm px-3" : ""}
             >
               <Camera className="w-4 h-4 mr-2" />
-              Take Photo
+              {isMobile ? "Camera" : "Take Photo"}
             </Button>
           </div>
           
@@ -176,13 +184,14 @@ export const FileUpload = ({ onFilesSelect, disabled }: FileUploadProps) => {
             onChange={handleFileInput}
             className="hidden"
             disabled={disabled}
+            {...(isMobile && { inputMode: 'none' })}
           />
           
           <input
             ref={cameraInputRef}
             type="file"
             accept="image/*"
-            capture="environment"
+            capture={isMobile ? "environment" : undefined}
             onChange={handleCameraCapture}
             className="hidden"
             disabled={disabled}
@@ -211,9 +220,9 @@ export const FileUpload = ({ onFilesSelect, disabled }: FileUploadProps) => {
                     <div className="flex items-center gap-3">
                       <IconComponent className="w-6 h-6 text-primary flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium truncate">{file.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {(file.size / 1024 / 1024).toFixed(2)} MB • {file.type.split('/')[1]?.toUpperCase()}
+                        <p className={`font-medium truncate ${isMobile ? 'text-sm' : ''}`}>{file.name}</p>
+                        <p className={`text-muted-foreground ${isMobile ? 'text-xs' : 'text-sm'}`}>
+                          {(file.size / 1024 / 1024).toFixed(2)} MB{isMobile ? '' : ` • ${file.type.split('/')[1]?.toUpperCase()}`}
                         </p>
                       </div>
                     </div>
