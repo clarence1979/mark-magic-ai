@@ -102,8 +102,20 @@ Begin transcription:`
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to process image');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error?.message || 'Failed to process image';
+
+        if (response.status === 401) {
+          throw new Error('Invalid API key. Please check your OpenAI API key in settings.');
+        }
+        if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please try again in a few moments.');
+        }
+        if (response.status === 403) {
+          throw new Error('API key does not have access to this model. Please check your OpenAI account permissions.');
+        }
+
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -168,8 +180,20 @@ Format as clear bullet points with specific mark allocations and criteria.`
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to generate scheme');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error?.message || 'Failed to generate scheme';
+
+        if (response.status === 401) {
+          throw new Error('Invalid API key. Please check your OpenAI API key in settings.');
+        }
+        if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please try again in a few moments.');
+        }
+        if (response.status === 403) {
+          throw new Error('API key does not have access to this model. Please check your OpenAI account permissions.');
+        }
+
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -257,8 +281,20 @@ CRITICAL:
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to mark work');
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error?.message || 'Failed to mark work';
+
+        if (response.status === 401) {
+          throw new Error('Invalid API key. Please check your OpenAI API key in settings.');
+        }
+        if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please try again in a few moments.');
+        }
+        if (response.status === 403) {
+          throw new Error('API key does not have access to this model. Please check your OpenAI account permissions.');
+        }
+
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();

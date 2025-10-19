@@ -3,10 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Eye, EyeOff, Key, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Key } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cache } from '@/services/apiKeyCache';
-import { OpenAIService } from '@/services/openaiService';
 
 interface APIKeySetupProps {
   onSetup: (apiKey: string) => void;
@@ -16,7 +15,6 @@ interface APIKeySetupProps {
 export const APIKeySetup = ({ onSetup, apiKey }: APIKeySetupProps) => {
   const [inputApiKey, setInputApiKey] = useState(apiKey || cache.apiKey || '');
   const [showKey, setShowKey] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
   const { toast } = useToast();
 
   // Auto-populate from cache on mount and sync with other fields
@@ -52,38 +50,13 @@ export const APIKeySetup = ({ onSetup, apiKey }: APIKeySetupProps) => {
       return;
     }
 
-    setIsValidating(true);
+    cache.apiKey = inputApiKey;
+    onSetup(inputApiKey);
 
-    try {
-      const openaiService = new OpenAIService(inputApiKey);
-      const validation = await openaiService.validateApiKey();
-
-      if (!validation.valid) {
-        toast({
-          title: "Invalid API Key",
-          description: validation.error || "The API key could not be validated. Please check your key and try again.",
-          variant: "destructive",
-        });
-        setIsValidating(false);
-        return;
-      }
-
-      cache.apiKey = inputApiKey;
-      onSetup(inputApiKey);
-
-      toast({
-        title: "Success",
-        description: "API key validated and configured successfully",
-      });
-    } catch (error) {
-      toast({
-        title: "Validation Error",
-        description: "Failed to validate API key. Please check your internet connection and try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsValidating(false);
-    }
+    toast({
+      title: "Success",
+      description: "API key configured successfully. It will be validated when you process your first file.",
+    });
   };
 
   return (
@@ -116,15 +89,8 @@ export const APIKeySetup = ({ onSetup, apiKey }: APIKeySetupProps) => {
             </Button>
           </div>
         </div>
-        <Button type="submit" className="w-full" disabled={isValidating}>
-          {isValidating ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Validating...
-            </>
-          ) : (
-            apiKey ? 'Update API Key' : 'Set API Key'
-          )}
+        <Button type="submit" className="w-full">
+          {apiKey ? 'Update API Key' : 'Set API Key'}
         </Button>
       </form>
       <div className="p-3 bg-muted rounded-lg">
