@@ -15,13 +15,17 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { apiKey } = await req.json();
+    const body = await req.json();
+    console.log('Received validation request');
+    
+    const { apiKey } = body;
 
     if (!apiKey || typeof apiKey !== 'string') {
+      console.log('Missing or invalid apiKey in request');
       return new Response(
         JSON.stringify({ valid: false, error: 'API key is required' }),
         {
-          status: 400,
+          status: 200,
           headers: {
             ...corsHeaders,
             'Content-Type': 'application/json',
@@ -31,10 +35,11 @@ Deno.serve(async (req: Request) => {
     }
 
     if (!apiKey.startsWith('sk-')) {
+      console.log('API key does not start with sk-');
       return new Response(
         JSON.stringify({ valid: false, error: 'Invalid API key format. OpenAI keys start with sk-' }),
         {
-          status: 400,
+          status: 200,
           headers: {
             ...corsHeaders,
             'Content-Type': 'application/json',
@@ -43,15 +48,34 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const response = await fetch('https://api.openai.com/v1/models', {
-      method: 'GET',
+    console.log('Validating API key with OpenAI...');
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: 'test' }],
+        max_tokens: 1,
+      }),
     });
 
+    console.log('OpenAI response status:', response.status);
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      const errorText = await response.text();
+      console.log('OpenAI error response:', errorText);
+      
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch {
+        errorData = {};
+      }
+      
       let errorMessage = 'Invalid API key';
 
       if (response.status === 401) {
@@ -76,6 +100,8 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    console.log('API key validation successful');
+    
     return new Response(
       JSON.stringify({ valid: true }),
       {
@@ -94,7 +120,7 @@ Deno.serve(async (req: Request) => {
         error: error instanceof Error ? error.message : 'Failed to validate API key' 
       }),
       {
-        status: 500,
+        status: 200,
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json',
