@@ -145,13 +145,29 @@ const Index = () => {
         updateProcessingStep('orientation', 'completed');
         setCurrentProgress(15);
 
+        const confidenceText = orientationResponse.confidence
+          ? ` (${Math.round(orientationResponse.confidence * 100)}% confidence)`
+          : '';
+
         toast({
           title: "Orientation Corrected",
-          description: `Image was ${orientationResponse.originalOrientation?.replace(/_/g, ' ')} and has been corrected`,
+          description: `Image was ${orientationResponse.originalOrientation?.replace(/_/g, ' ')} and has been corrected${confidenceText}`,
         });
+
+        if (orientationResponse.verificationPassed === false) {
+          toast({
+            title: "Verification Warning",
+            description: "Orientation correction may need review. Check OCR results carefully.",
+            variant: "default",
+          });
+        }
       } else {
         updateProcessingStep('orientation', 'completed');
         setCurrentProgress(15);
+
+        if (orientationResponse.confidence && orientationResponse.confidence < 0.7) {
+          console.log('Orientation check skipped due to low confidence:', orientationResponse.reasoning);
+        }
       }
     } catch (error) {
       console.error('Orientation Check Error:', error);
