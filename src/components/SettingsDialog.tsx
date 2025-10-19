@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +22,7 @@ interface SettingsDialogProps {
 
 export const SettingsDialog = ({ apiKey, onAPIKeySetup }: SettingsDialogProps) => {
   const [open, setOpen] = useState(false);
+  const isMobile = useIsMobile();
   const hasValidKey = apiKey && apiKey.length > 0;
 
   return (
@@ -31,16 +33,20 @@ export const SettingsDialog = ({ apiKey, onAPIKeySetup }: SettingsDialogProps) =
           size="icon"
           className={cn(
             "rounded-full transition-colors",
+            isMobile ? "h-10 w-10" : "h-12 w-12",
             hasValidKey
               ? "text-green-600 hover:text-green-700 hover:bg-green-100"
               : "text-red-600 hover:text-red-700 hover:bg-red-100"
           )}
           title={hasValidKey ? "Settings - API Key Configured" : "Settings - API Key Required"}
         >
-          <Settings className="w-5 h-5" />
+          <Settings className={cn(isMobile ? "w-5 h-5" : "w-6 h-6")} />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={cn(
+        "max-h-[90vh] overflow-y-auto",
+        isMobile ? "w-[95vw] max-w-[95vw] p-4" : "max-w-2xl"
+      )}>
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
           <DialogDescription>
@@ -48,9 +54,9 @@ export const SettingsDialog = ({ apiKey, onAPIKeySetup }: SettingsDialogProps) =
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className={cn("space-y-4 sm:space-y-6", isMobile ? "py-2" : "py-4")}>
           <div>
-            <h3 className="text-lg font-semibold mb-3">OpenAI API Key</h3>
+            <h3 className={cn("font-semibold mb-2 sm:mb-3", isMobile ? "text-base" : "text-lg")}>OpenAI API Key</h3>
             <APIKeySetup
               apiKey={apiKey}
               onAPIKeySetup={(key) => {
@@ -62,11 +68,11 @@ export const SettingsDialog = ({ apiKey, onAPIKeySetup }: SettingsDialogProps) =
             />
           </div>
 
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-semibold mb-3">Important Notice for Australian Schools</h3>
+          <div className="border-t pt-4 sm:pt-6">
+            <h3 className={cn("font-semibold mb-2 sm:mb-3", isMobile ? "text-base" : "text-lg")}>Important Notice for Australian Schools</h3>
             <Alert className="border-warning/50 bg-warning/5">
-              <AlertTriangle className="w-5 h-5 text-warning" />
-              <AlertDescription className="space-y-3 text-sm">
+              <AlertTriangle className={cn("text-warning", isMobile ? "w-4 h-4" : "w-5 h-5")} />
+              <AlertDescription className={cn("space-y-2 sm:space-y-3", isMobile ? "text-xs" : "text-sm")}>
                 <p className="font-semibold">
                   For Educators in Australian Schools
                 </p>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { APIKeySetup } from '@/components/APIKeySetup';
 import { FileUpload } from '@/components/FileUpload';
 import { MarkingSchemeInput } from '@/components/MarkingSchemeInput';
@@ -30,6 +31,7 @@ interface ProcessingStep {
 }
 
 const Index = () => {
+  const isMobile = useIsMobile();
   const [apiKey, setApiKey] = useState<string>(() => cache.apiKey);
   const [activeTab, setActiveTab] = useState('upload');
   const [showQuickSetup, setShowQuickSetup] = useState(false);
@@ -402,27 +404,29 @@ const Index = () => {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
       {/* Hero Section */}
       <div
-        className="relative min-h-[40vh] sm:min-h-[50vh] flex items-center justify-center bg-cover bg-center bg-no-repeat"
+        className="relative min-h-[35vh] sm:min-h-[50vh] flex items-center justify-center bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${heroBackground})` }}
       >
         <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-background/90"></div>
-        <div className="absolute top-4 right-4 z-20">
+        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20">
           <SettingsDialog apiKey={apiKey} onAPIKeySetup={handleAPIKeySetup} />
         </div>
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-          <div className="flex items-center justify-center gap-4 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
             <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-primary rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
               <GraduationCap className="w-8 h-8 sm:w-10 sm:h-10 text-primary-foreground" />
             </div>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent text-left leading-relaxed pb-3">
+            <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent text-center sm:text-left leading-relaxed pb-3">
               Magic Marking AI Tool
             </h1>
           </div>
-          <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-4 sm:mb-6 max-w-3xl mx-auto px-2">
-            AI-powered marking assistant that extracts text from handwritten student work, automatically grades against your marking scheme,
-            detects plagiarism, and identifies AI-generated content - saving educators hours of assessment time
+          <p className="text-sm sm:text-base md:text-lg lg:text-xl text-muted-foreground mb-4 sm:mb-6 max-w-3xl mx-auto px-2">
+            {isMobile
+              ? "AI-powered marking assistant for grading student work with plagiarism and AI detection"
+              : "AI-powered marking assistant that extracts text from handwritten student work, automatically grades against your marking scheme, detects plagiarism, and identifies AI-generated content - saving educators hours of assessment time"
+            }
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6 text-sm">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6 text-xs sm:text-sm">
             <div className="flex items-center gap-2 justify-center">
               <Upload className="w-4 h-4 sm:w-5 sm:h-5 text-primary flex-shrink-0" />
               <span className="text-foreground font-medium">OCR Extraction</span>
@@ -443,7 +447,7 @@ const Index = () => {
         </div>
       </div>
 
-      <main className="container mx-auto px-3 sm:px-4 py-6 sm:py-8">
+      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
 
           {/* Main Workflow Tabs */}
