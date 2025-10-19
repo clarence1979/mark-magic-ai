@@ -10,20 +10,6 @@ class ApiKeyCache {
     if (typeof window !== 'undefined') {
       (window as any).apiKeyCache = this;
     }
-
-    // Clear cache on page unload
-    if (typeof window !== 'undefined') {
-      window.addEventListener('beforeunload', () => {
-        this.clear();
-      });
-
-      // Also clear on tab close (visibilitychange when document becomes hidden)
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'hidden') {
-          this.clear();
-        }
-      });
-    }
   }
 
   static getInstance(): ApiKeyCache {

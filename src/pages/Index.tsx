@@ -59,13 +59,26 @@ const Index = () => {
 
   const { toast } = useToast();
 
-  // Auto-sync with cache on mount
+  // Auto-sync with cache on mount and when page becomes visible
   useEffect(() => {
     const cachedKey = cache.apiKey;
-    if (cachedKey !== apiKey) {
+    if (cachedKey && cachedKey !== apiKey) {
       setApiKey(cachedKey);
     }
-  }, []);
+
+    // Re-check when page becomes visible (important for mobile)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const currentCachedKey = cache.apiKey;
+        if (currentCachedKey && currentCachedKey !== apiKey) {
+          setApiKey(currentCachedKey);
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [apiKey]);
 
   const handleAPIKeySetup = (key: string) => {
     setApiKey(key);
