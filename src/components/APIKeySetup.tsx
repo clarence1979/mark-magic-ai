@@ -57,27 +57,43 @@ export const APIKeySetup = ({ onSetup, apiKey }: APIKeySetupProps) => {
     try {
       console.log('Starting API key validation...');
 
-      const { data, error } = await supabase.functions.invoke('validate-openai-key', {
+      const result = await supabase.functions.invoke('validate-openai-key', {
         body: { apiKey: inputApiKey },
       });
 
-      if (error) {
-        console.error('Supabase function error:', error);
+      console.log('Full result object:', result);
+      console.log('Result data:', result.data);
+      console.log('Result error:', result.error);
+
+      if (result.error) {
+        console.error('Supabase function error:', result.error);
         toast({
           title: "Validation Error",
-          description: error.message || "Failed to validate API key. Please try again.",
+          description: result.error.message || "Failed to validate API key. Please try again.",
           variant: "destructive",
         });
         setIsValidating(false);
         return;
       }
 
-      console.log('Validation result:', data);
+      const responseData = result.data;
+      console.log('Response data type:', typeof responseData);
+      console.log('Response data:', responseData);
 
-      if (!data || !data.valid) {
+      if (!responseData) {
+        toast({
+          title: "Validation Error",
+          description: "No response from validation service.",
+          variant: "destructive",
+        });
+        setIsValidating(false);
+        return;
+      }
+
+      if (!responseData.valid) {
         toast({
           title: "Invalid API Key",
-          description: data?.error || "The API key could not be validated. Please check your key and try again.",
+          description: responseData.error || "The API key could not be validated. Please check your key and try again.",
           variant: "destructive",
         });
         setIsValidating(false);
