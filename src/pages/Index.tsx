@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useApiKey } from '@/hooks/useApiKey';
 import { APIKeySetup } from '@/components/APIKeySetup';
 import { FileUpload } from '@/components/FileUpload';
 import { MarkingSchemeInput } from '@/components/MarkingSchemeInput';
@@ -32,6 +33,7 @@ interface ProcessingStep {
 
 const Index = () => {
   const isMobile = useIsMobile();
+  const iframeApiKey = useApiKey();
   const [apiKey, setApiKey] = useState<string>(() => cache.apiKey);
   const [activeTab, setActiveTab] = useState('upload');
   const [showQuickSetup, setShowQuickSetup] = useState(false);
@@ -59,14 +61,17 @@ const Index = () => {
 
   const { toast } = useToast();
 
-  // Auto-sync with cache on mount and when page becomes visible
   useEffect(() => {
-    const cachedKey = cache.apiKey;
-    if (cachedKey && cachedKey !== apiKey) {
-      setApiKey(cachedKey);
+    if (iframeApiKey) {
+      setApiKey(iframeApiKey);
+      cache.apiKey = iframeApiKey;
+    } else {
+      const cachedKey = cache.apiKey;
+      if (cachedKey && cachedKey !== apiKey) {
+        setApiKey(cachedKey);
+      }
     }
 
-    // Re-check when page becomes visible (important for mobile)
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         const currentCachedKey = cache.apiKey;
@@ -78,7 +83,7 @@ const Index = () => {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [apiKey]);
+  }, [iframeApiKey, apiKey]);
 
   const handleAPIKeySetup = (key: string) => {
     setApiKey(key);

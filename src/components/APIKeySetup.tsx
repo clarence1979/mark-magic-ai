@@ -19,18 +19,22 @@ export const APIKeySetup = ({ onSetup, apiKey }: APIKeySetupProps) => {
   const [isValidating, setIsValidating] = useState(false);
   const { toast } = useToast();
 
-  // Auto-populate from cache on mount and sync with other fields
   useEffect(() => {
-    const cachedKey = cache.apiKey;
-    if (cachedKey && cachedKey !== inputApiKey) {
-      setInputApiKey(cachedKey);
+    if (apiKey) {
+      setInputApiKey(apiKey);
+      cache.apiKey = apiKey;
+    } else {
+      const cachedKey = cache.apiKey;
+      if (cachedKey && cachedKey !== inputApiKey) {
+        setInputApiKey(cachedKey);
+      }
     }
-    // Sync all input fields periodically
+
     const syncInterval = setInterval(() => {
       cache.syncInputFields();
     }, 1000);
     return () => clearInterval(syncInterval);
-  }, [inputApiKey]);
+  }, [apiKey, inputApiKey]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
