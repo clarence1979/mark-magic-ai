@@ -2,8 +2,9 @@ import { useState, useCallback, useRef } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Upload, FileText, X, Camera, File } from 'lucide-react';
+import { Upload, FileText, X, Camera, File, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { FileConversionService } from '@/services/fileConversionService';
 
 interface FileUploadProps {
   onFilesSelect: (files: File[]) => void;
@@ -14,6 +15,7 @@ export const FileUpload = ({ onFilesSelect, disabled }: FileUploadProps) => {
   const isMobile = useIsMobile();
   const [dragActive, setDragActive] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [isConverting, setIsConverting] = useState(false);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -49,31 +51,14 @@ export const FileUpload = ({ onFilesSelect, disabled }: FileUploadProps) => {
     e.stopPropagation();
     setDragActive(false);
 
-    if (disabled) return;
+    if (disabled || isConverting) return;
 
     const files = Array.from(e.dataTransfer.files);
     handleFilesSelect(files);
-  }, [disabled]);
+  }, [disabled, isConverting]);
 
-  const validateFile = (file: File): boolean => {
-    const fileName = file.name.toLowerCase();
-    const fileType = file.type;
-    
-    // Check by file extension as fallback since MIME types can be unreliable
-    const isValidImage = fileType.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|heic)$/i.test(fileName);
-    const isValidPDF = fileType === 'application/pdf' || fileName.endsWith('.pdf');
-    const isValidDoc = fileType.includes('word') || fileType.includes('document') || /\.(doc|docx)$/i.test(fileName);
-    
-    if (!isValidImage && !isValidPDF && !isValidDoc) {
-      toast({
-        title: "Invalid File Type",
-        description: `${file.name} is not supported. Please select images, PDF, or DOCX files.`,
-        variant: "destructive",
-      });
-      return false;
-    }
-
-    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+  const validateFileSize = (file: File): boolean => {
+    if (file.size > 10 * 1024 * 1024) {
       toast({
         title: "File Too Large",
         description: `${file.name} is larger than 10MB. Please select a smaller file.`,
@@ -81,21 +66,59 @@ export const FileUpload = ({ onFilesSelect, disabled }: FileUploadProps) => {
       });
       return false;
     }
-
     return true;
   };
 
-  const handleFilesSelect = (files: File[]) => {
-    const validFiles = files.filter(validateFile);
-    if (validFiles.length > 0) {
-      const newFiles = [...selectedFiles, ...validFiles];
-      setSelectedFiles(newFiles);
-      onFilesSelect(newFiles);
-      
+  const handleFilesSelect = async (files: File[]) => {
+    const validSizeFiles = files.filter(validateFileSize);
+    if (validSizeFiles.length === 0) return;
+
+    setIsConverting(true);
+
+    try {
+      const convertedFiles: File[] = [];
+      let convertedCount = 0;
+
+      for (const file of validSizeFiles) {
+        const result = await FileConversionService.convertToPDFIfNeeded(file);
+
+        if (result.success && result.file) {
+          convertedFiles.push(result.file);
+          if (result.converted) {
+            convertedCount++;
+          }
+        } else if (result.error) {
+          toast({
+            title: "Conversion Error",
+            description: result.error,
+            variant: "destructive",
+          });
+        }
+      }
+
+      if (convertedFiles.length > 0) {
+        const newFiles = [...selectedFiles, ...convertedFiles];
+        setSelectedFiles(newFiles);
+        onFilesSelect(newFiles);
+
+        let description = `${convertedFiles.length} file(s) added successfully.`;
+        if (convertedCount > 0) {
+          description += ` ${convertedCount} file(s) automatically converted to PDF.`;
+        }
+
+        toast({
+          title: "Files Added",
+          description,
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Files Added",
-        description: `${validFiles.length} file(s) added successfully.`,
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to process files",
+        variant: "destructive",
       });
+    } finally {
+      setIsConverting(false);
     }
   };
 
@@ -131,7 +154,7 @@ export const FileUpload = ({ onFilesSelect, disabled }: FileUploadProps) => {
           Upload Student Work
         </CardTitle>
         <CardDescription>
-          Upload images, PDF files, or DOCX documents. You can select multiple files or use your camera.
+          Upload images, PDF, DOCX, TXT, or other document files. Unsupported formats will be automatically converted to PDF.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -140,50 +163,66 @@ export const FileUpload = ({ onFilesSelect, disabled }: FileUploadProps) => {
             dragActive
               ? 'border-primary bg-primary/5'
               : 'border-border hover:border-primary/50'
-          } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+          } ${disabled || isConverting ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
           onDrop={handleDrop}
-          onClick={() => !disabled && fileInputRef.current?.click()}
+          onClick={() => !disabled && !isConverting && fileInputRef.current?.click()}
         >
-          <Upload className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} mx-auto mb-3 ${dragActive ? 'text-primary' : 'text-muted-foreground'}`} />
-          <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-medium mb-2`}>
-            {dragActive ? 'Drop your files here' : isMobile ? 'Choose files or take a photo' : 'Choose files or drag & drop'}
-          </h3>
-          <p className={`text-muted-foreground ${isMobile ? 'text-xs mb-3' : 'text-sm mb-4'}`}>
-            {isMobile ? 'Images, PDF, DOCX' : 'Support for Images (JPG, PNG, HEIC), PDF, and DOCX files'}
-          </p>
+          {isConverting ? (
+            <>
+              <Loader2 className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} mx-auto mb-3 text-primary animate-spin`} />
+              <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-medium mb-2`}>
+                Converting files...
+              </h3>
+              <p className={`text-muted-foreground ${isMobile ? 'text-xs mb-3' : 'text-sm mb-4'}`}>
+                Please wait while we process your files
+              </p>
+            </>
+          ) : (
+            <>
+              <Upload className={`${isMobile ? 'w-8 h-8' : 'w-10 h-10'} mx-auto mb-3 ${dragActive ? 'text-primary' : 'text-muted-foreground'}`} />
+              <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-medium mb-2`}>
+                {dragActive ? 'Drop your files here' : isMobile ? 'Choose files or take a photo' : 'Choose files or drag & drop'}
+              </h3>
+              <p className={`text-muted-foreground ${isMobile ? 'text-xs mb-3' : 'text-sm mb-4'}`}>
+                {isMobile ? 'Any document or image file' : 'Images, PDF, DOCX, TXT - unsupported formats auto-convert to PDF'}
+              </p>
+            </>
+          )}
           
-          <div className="flex gap-2 justify-center flex-wrap">
-            <Button
-              variant="outline"
-              disabled={disabled}
-              onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
-              className={isMobile ? "text-sm px-3" : ""}
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Select Files
-            </Button>
-            <Button
-              variant="outline"
-              disabled={disabled}
-              onClick={(e) => { e.stopPropagation(); cameraInputRef.current?.click(); }}
-              className={isMobile ? "text-sm px-3" : ""}
-            >
-              <Camera className="w-4 h-4 mr-2" />
-              {isMobile ? "Camera" : "Take Photo"}
-            </Button>
-          </div>
-          
+          {!isConverting && (
+            <div className="flex gap-2 justify-center flex-wrap">
+              <Button
+                variant="outline"
+                disabled={disabled}
+                onClick={(e) => { e.stopPropagation(); fileInputRef.current?.click(); }}
+                className={isMobile ? "text-sm px-3" : ""}
+              >
+                <Upload className="w-4 h-4 mr-2" />
+                Select Files
+              </Button>
+              <Button
+                variant="outline"
+                disabled={disabled}
+                onClick={(e) => { e.stopPropagation(); cameraInputRef.current?.click(); }}
+                className={isMobile ? "text-sm px-3" : ""}
+              >
+                <Camera className="w-4 h-4 mr-2" />
+                {isMobile ? "Camera" : "Take Photo"}
+              </Button>
+            </div>
+          )}
+
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/*,.pdf,.docx,.doc"
+            accept="*/*"
             multiple
             onChange={handleFileInput}
             className="hidden"
-            disabled={disabled}
+            disabled={disabled || isConverting}
             {...(isMobile && { inputMode: 'none' })}
           />
           
@@ -194,7 +233,7 @@ export const FileUpload = ({ onFilesSelect, disabled }: FileUploadProps) => {
             capture={isMobile ? "environment" : undefined}
             onChange={handleCameraCapture}
             className="hidden"
-            disabled={disabled}
+            disabled={disabled || isConverting}
           />
         </div>
 
@@ -203,10 +242,10 @@ export const FileUpload = ({ onFilesSelect, disabled }: FileUploadProps) => {
             <div className="flex items-center justify-between">
               <h4 className="font-medium">Selected Files ({selectedFiles.length})</h4>
               <Button
-                variant="ghost" 
+                variant="ghost"
                 size="sm"
                 onClick={clearAllFiles}
-                disabled={disabled}
+                disabled={disabled || isConverting}
               >
                 Clear All
               </Button>
@@ -230,7 +269,7 @@ export const FileUpload = ({ onFilesSelect, disabled }: FileUploadProps) => {
                       variant="ghost"
                       size="icon"
                       onClick={() => removeFile(index)}
-                      disabled={disabled}
+                      disabled={disabled || isConverting}
                       className="flex-shrink-0"
                     >
                       <X className="w-4 h-4" />
