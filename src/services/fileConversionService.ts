@@ -42,7 +42,7 @@ export class FileConversionService {
 
     return {
       success: false,
-      error: `File type "${fileType || 'unknown'}" is not supported. Please use images, PDF, DOCX, or text files.`
+      error: `Unable to convert "${file.name}" (${fileType || 'unknown format'}). Supported formats: images (JPG, PNG, GIF, WEBP, HEIC, BMP), PDF, DOCX, and text files. Please convert this file to a supported format before uploading.`
     };
   }
 
@@ -117,7 +117,7 @@ export class FileConversionService {
     } catch (error) {
       return {
         success: false,
-        error: `Failed to convert text file: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Failed to convert "${file.name}" to PDF. The text file may be corrupted or in an unsupported encoding. Error: ${error instanceof Error ? error.message : 'Unknown error'}`
       };
     }
   }
@@ -134,7 +134,7 @@ export class FileConversionService {
         if (!result.value) {
           return {
             success: false,
-            error: 'Could not extract text from document'
+            error: `Unable to extract content from "${file.name}". The document may be empty, password-protected, or corrupted. Please try saving it as a new file or use a different format.`
           };
         }
 
@@ -176,12 +176,12 @@ export class FileConversionService {
 
       return {
         success: false,
-        error: 'Document format not supported for conversion'
+        error: `The document format of "${file.name}" is not supported for automatic conversion. Supported document formats: DOCX. Please convert to DOCX, PDF, or an image format.`
       };
     } catch (error) {
       return {
         success: false,
-        error: `Failed to convert document: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Failed to convert "${file.name}" to PDF. The document may be corrupted or in an incompatible format. Error: ${error instanceof Error ? error.message : 'Unknown error'}. Please try re-saving the file or converting it to a supported format.`
       };
     }
   }
