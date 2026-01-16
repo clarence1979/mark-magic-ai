@@ -23,7 +23,7 @@ import { ImageOrientationService } from '@/services/imageOrientationService';
 import { useToast } from '@/hooks/use-toast';
 import { cache } from '@/services/apiKeyCache';
 import heroBackground from '@/assets/hero-background.jpg';
-import clarenceLogo from '@/assets/clarence-logo.png';
+import digivecLogo from '@/assets/digivec_logo.png';
 
 interface ProcessingStep {
   id: string;
@@ -938,16 +938,16 @@ const Index = () => {
           <div className="max-w-4xl mx-auto text-center">
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 mb-4">
               <span className="text-xs sm:text-sm text-muted-foreground">Proudly made by:</span>
-              <a 
-                href="https://clarence.guru" 
-                target="_blank" 
+              <a
+                href="https://digitalvector.com.au"
+                target="_blank"
                 rel="noopener noreferrer"
                 className="hover:opacity-80 transition-opacity"
               >
-                <img 
-                  src={clarenceLogo} 
-                  alt="Clarence.guru" 
-                  className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg object-cover shadow-md"
+                <img
+                  src={digivecLogo}
+                  alt="Digital Vector"
+                  className="h-12 w-auto sm:h-16 sm:w-auto rounded-lg object-contain shadow-md"
                 />
               </a>
             </div>
