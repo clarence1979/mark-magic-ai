@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/
 import { Textarea } from './ui/textarea';
 import { Upload, FileText, Loader2, X } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
-import { supabase } from '../lib/supabase';
+import { supabaseAdmin } from '../lib/supabase';
 import { MarkingSchemeService } from '../services/markingSchemeService';
 
 interface BatchUploadProps {
@@ -119,7 +119,7 @@ export function BatchUpload({ apiKey, onBatchCreated }: BatchUploadProps) {
         fileType = 'manual';
       }
 
-      const { data: schemeData, error: schemeError } = await supabase
+      const { data: schemeData, error: schemeError } = await supabaseAdmin
         .from('marking_schemes')
         .insert({
           name: batchName,
@@ -134,7 +134,7 @@ export function BatchUpload({ apiKey, onBatchCreated }: BatchUploadProps) {
       if (schemeError) throw schemeError;
       if (!schemeData) throw new Error('Failed to create marking scheme');
 
-      const { data: batchData, error: batchError } = await supabase
+      const { data: batchData, error: batchError } = await supabaseAdmin
         .from('batch_jobs')
         .insert({
           name: batchName,

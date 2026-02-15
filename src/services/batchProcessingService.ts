@@ -1,4 +1,4 @@
-import { supabase, BatchJob, StudentAssessment } from '../lib/supabase';
+import { supabase, supabaseAdmin, BatchJob, StudentAssessment } from '../lib/supabase';
 import { ImageOrientationService } from './imageOrientationService';
 import { OpenAIService } from './openaiService';
 import { AIDetectionService } from './aiDetectionService';
@@ -13,7 +13,7 @@ export interface BatchProcessingOptions {
 
 export class BatchProcessingService {
   async createBatchJob(name: string, markingSchemeId: string, totalStudents: number): Promise<string> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('batch_jobs')
       .insert({
         name,
@@ -32,7 +32,7 @@ export class BatchProcessingService {
   }
 
   async addStudentToBatch(batchJobId: string, studentName: string, file: File): Promise<string> {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('student_assessments')
       .insert({
         batch_job_id: batchJobId,
@@ -50,7 +50,7 @@ export class BatchProcessingService {
   }
 
   async processBatch(batchJobId: string, files: File[], options: BatchProcessingOptions): Promise<void> {
-    await supabase
+    await supabaseAdmin
       .from('batch_jobs')
       .update({ status: 'processing' })
       .eq('id', batchJobId);
@@ -68,7 +68,7 @@ export class BatchProcessingService {
 
         const assessmentId = await this.addStudentToBatch(batchJobId, studentName, file);
 
-        await supabase
+        await supabaseAdmin
           .from('student_assessments')
           .update({ status: 'processing' })
           .eq('id', assessmentId);
@@ -109,7 +109,7 @@ export class BatchProcessingService {
           processed_at: new Date().toISOString()
         };
 
-        const { data: updatedAssessment, error: updateError } = await supabase
+        const { data: updatedAssessment, error: updateError } = await supabaseAdmin
           .from('student_assessments')
           .update(updateData)
           .eq('id', assessmentId)
@@ -120,7 +120,7 @@ export class BatchProcessingService {
 
         processedCount++;
 
-        await supabase
+        await supabaseAdmin
           .from('batch_jobs')
           .update({ processed_students: processedCount })
           .eq('id', batchJobId);
@@ -139,7 +139,7 @@ export class BatchProcessingService {
         const studentName = this.extractStudentName(file.name);
         const assessmentId = await this.addStudentToBatch(batchJobId, studentName, file);
 
-        await supabase
+        await supabaseAdmin
           .from('student_assessments')
           .update({
             status: 'failed',
@@ -151,7 +151,7 @@ export class BatchProcessingService {
       }
     }
 
-    await supabase
+    await supabaseAdmin
       .from('batch_jobs')
       .update({
         status: 'completed',
