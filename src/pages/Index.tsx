@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useApiKey } from '@/hooks/useApiKey';
-import { APIKeySetup } from '@/components/APIKeySetup';
+import { useAuth } from '@/contexts/AuthContext';
+import { LoginScreen } from '@/components/LoginScreen';
+import { AppHeader } from '@/components/AppHeader';
 import { FileUpload } from '@/components/FileUpload';
 import { MarkingSchemeInput } from '@/components/MarkingSchemeInput';
 import { ProcessingStatus } from '@/components/ProcessingStatus';
@@ -11,17 +12,15 @@ import { AIDetectionResults } from '@/components/AIDetectionResults';
 import { PrivacyPolicy } from '@/components/PrivacyPolicy';
 import { BatchUpload } from '@/components/BatchUpload';
 import { BatchProcessing } from '@/components/BatchProcessing';
-import { SettingsDialog } from '@/components/SettingsDialog';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GraduationCap, Settings, Upload, Zap, CheckCircle, Shield, BookOpen, Users, AlertTriangle } from 'lucide-react';
+import { GraduationCap, Upload, Zap, CheckCircle, Shield, BookOpen, Users } from 'lucide-react';
 import { OpenAIService } from '@/services/openaiService';
 import { PlagiarismService, PlagiarismResult } from '@/services/plagiarismService';
 import { AIDetectionService, AIDetectionResult } from '@/services/aiDetectionService';
 import { ImageOrientationService } from '@/services/imageOrientationService';
 import { useToast } from '@/hooks/use-toast';
-import { cache } from '@/services/apiKeyCache';
 import heroBackground from '@/assets/hero-background.jpg';
 import digivecLogo from '@/assets/digivec_logo.png';
 
@@ -33,10 +32,9 @@ interface ProcessingStep {
 
 const Index = () => {
   const isMobile = useIsMobile();
-  const iframeApiKey = useApiKey();
-  const [apiKey, setApiKey] = useState<string>(() => cache.apiKey);
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const apiKey = user?.openaiApiKey || '';
   const [activeTab, setActiveTab] = useState('upload');
-  const [showQuickSetup, setShowQuickSetup] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [currentFileIndex, setCurrentFileIndex] = useState<number | null>(null);
   const [ocrText, setOcrText] = useState<string>('');
@@ -61,39 +59,20 @@ const Index = () => {
 
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (iframeApiKey) {
-      setApiKey(iframeApiKey);
-      cache.apiKey = iframeApiKey;
-    } else {
-      const cachedKey = cache.apiKey;
-      if (cachedKey && cachedKey !== apiKey) {
-        setApiKey(cachedKey);
-      }
-    }
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-slate-100">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        const currentCachedKey = cache.apiKey;
-        if (currentCachedKey && currentCachedKey !== apiKey) {
-          setApiKey(currentCachedKey);
-        }
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [iframeApiKey, apiKey]);
-
-  const handleAPIKeySetup = (key: string) => {
-    setApiKey(key);
-    cache.apiKey = key;
-    setShowQuickSetup(false);
-    // Auto-advance to upload tab once API key is set
-    if (!selectedFiles.length) {
-      setActiveTab('upload');
-    }
-  };
+  if (!isAuthenticated) {
+    return <LoginScreen />;
+  }
 
   const updateProcessingStep = (stepId: string, status: ProcessingStep['status']) => {
     setProcessingSteps(prev => 
@@ -420,15 +399,13 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5">
+      <AppHeader />
       {/* Hero Section */}
       <div
         className="relative min-h-[35vh] sm:min-h-[50vh] flex items-center justify-center bg-cover bg-center bg-no-repeat"
         style={{ backgroundImage: `url(${heroBackground})` }}
       >
         <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/70 to-background/90"></div>
-        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 z-20">
-          <SettingsDialog apiKey={apiKey} onAPIKeySetup={handleAPIKeySetup} />
-        </div>
         <div className="relative z-10 text-center px-4 max-w-4xl mx-auto">
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4 mb-4 sm:mb-6">
             <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-primary rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
