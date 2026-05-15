@@ -4,7 +4,7 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Textarea } from './ui/textarea';
-import { Upload, FileText, Loader2, X } from 'lucide-react';
+import { Upload, FileText, Loader as Loader2, X } from 'lucide-react';
 import { useToast } from '../hooks/use-toast';
 import { supabaseAdmin } from '../lib/supabase';
 import { MarkingSchemeService } from '../services/markingSchemeService';
@@ -224,7 +224,7 @@ export function BatchUpload({ apiKey, onBatchCreated }: BatchUploadProps) {
                 <Input
                   id="schemeFile"
                   type="file"
-                  accept=".txt,.pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  accept=".txt,.pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.heic,.bmp,.csv,.html,.htm,.md,.markdown"
                   onChange={handleMarkingSchemeFileChange}
                 />
                 {markingSchemeFile && (
@@ -239,7 +239,7 @@ export function BatchUpload({ apiKey, onBatchCreated }: BatchUploadProps) {
                 )}
               </div>
               <p className="text-sm text-muted-foreground mt-1">
-                Supported: TXT, PDF, DOC, DOCX, or images (JPG, PNG)
+                Supported: PDF, DOCX, TXT, CSV, HTML, MD, or images (JPG, PNG, WEBP, HEIC, BMP)
               </p>
             </div>
           )}

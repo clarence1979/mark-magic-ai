@@ -5,75 +5,84 @@ interface ConversionResult {
   file?: File;
   error?: string;
   converted?: boolean;
+  unsupported?: boolean;
 }
 
+// File types that are natively supported without conversion
+const SUPPORTED_IMAGE_TYPES = [
+  'image/jpeg', 'image/jpg', 'image/png', 'image/gif',
+  'image/webp', 'image/heic', 'image/bmp', 'image/tiff',
+  'image/svg+xml',
+];
+
+const SUPPORTED_IMAGE_EXTS = /\.(jpg|jpeg|png|gif|webp|heic|bmp|tiff|tif|svg)$/i;
+
+// File types we can convert to PDF client-side
+const CONVERTIBLE_TEXT_TYPES = ['text/plain', 'text/csv', 'text/html', 'text/markdown', 'text/xml'];
+const CONVERTIBLE_TEXT_EXTS = /\.(txt|csv|html|htm|md|markdown|xml|log|json|yaml|yml|rtf)$/i;
+
+const CONVERTIBLE_DOCX_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+const CONVERTIBLE_DOC_TYPE = 'application/msword';
+const CONVERTIBLE_DOC_EXTS = /\.(docx|doc)$/i;
+
+// File types that cannot be converted client-side — user should use anythingtopdf.com
+const KNOWN_UNSUPPORTED_EXTS = /\.(ppt|pptx|xls|xlsx|odt|odp|ods|pages|numbers|keynote|epub|mobi|indd|ai|psd|sketch|fig|mp4|mp3|avi|mov|wmv|flv|mkv|zip|rar|7z|tar|gz|exe|dmg|pkg|deb|apk|iso|bin|dll|so|jar|class|pyc)$/i;
+
 export class FileConversionService {
-  private static readonly SUPPORTED_IMAGE_TYPES = [
-    'image/jpeg', 'image/jpg', 'image/png', 'image/gif',
-    'image/webp', 'image/heic', 'image/bmp'
-  ];
-
-  private static readonly SUPPORTED_DOCUMENT_TYPES = [
-    'application/pdf',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'application/msword',
-    'text/plain'
-  ];
-
   static async convertToPDFIfNeeded(file: File): Promise<ConversionResult> {
-    const fileType = file.type;
     const fileName = file.name.toLowerCase();
 
     if (this.isDirectlySupported(file)) {
+      return { success: true, file, converted: false };
+    }
+
+    if (this.isTextConvertible(file)) {
+      return this.convertTextToPDF(file);
+    }
+
+    if (this.isDocConvertible(file)) {
+      return this.convertDocumentToPDF(file);
+    }
+
+    // Known unsupported binary formats
+    if (KNOWN_UNSUPPORTED_EXTS.test(fileName)) {
       return {
-        success: true,
-        file: file,
-        converted: false
+        success: false,
+        unsupported: true,
+        error: `"${file.name}" cannot be processed directly.`,
       };
     }
 
-    if (this.isTextFile(file)) {
-      return await this.convertTextToPDF(file);
-    }
-
-    if (this.isDocumentFile(file)) {
-      return await this.convertDocumentToPDF(file);
-    }
-
+    // Unknown/unrecognised type — also treat as unsupported
     return {
       success: false,
-      error: `Unable to convert "${file.name}" (${fileType || 'unknown format'}). Supported formats: images (JPG, PNG, GIF, WEBP, HEIC, BMP), PDF, DOCX, and text files. Please convert this file to a supported format before uploading.`
+      unsupported: true,
+      error: `"${file.name}" is in an unrecognised format and cannot be processed.`,
     };
   }
 
-  private static isDirectlySupported(file: File): boolean {
+  static isDirectlySupported(file: File): boolean {
     const fileType = file.type;
     const fileName = file.name.toLowerCase();
-
-    const isImage = this.SUPPORTED_IMAGE_TYPES.includes(fileType) ||
-                    /\.(jpg|jpeg|png|gif|webp|heic|bmp)$/i.test(fileName);
-
+    const isImage = SUPPORTED_IMAGE_TYPES.includes(fileType) || SUPPORTED_IMAGE_EXTS.test(fileName);
     const isPDF = fileType === 'application/pdf' || fileName.endsWith('.pdf');
-
     return isImage || isPDF;
   }
 
-  private static isTextFile(file: File): boolean {
+  private static isTextConvertible(file: File): boolean {
     const fileType = file.type;
     const fileName = file.name.toLowerCase();
-
-    return fileType === 'text/plain' ||
-           fileName.endsWith('.txt') ||
-           fileType.startsWith('text/');
+    return CONVERTIBLE_TEXT_TYPES.includes(fileType) ||
+           fileType.startsWith('text/') ||
+           CONVERTIBLE_TEXT_EXTS.test(fileName);
   }
 
-  private static isDocumentFile(file: File): boolean {
+  private static isDocConvertible(file: File): boolean {
     const fileType = file.type;
     const fileName = file.name.toLowerCase();
-
-    return fileType.includes('word') ||
-           fileType.includes('document') ||
-           /\.(doc|docx|rtf|odt)$/i.test(fileName);
+    return fileType === CONVERTIBLE_DOCX_TYPE ||
+           fileType === CONVERTIBLE_DOC_TYPE ||
+           CONVERTIBLE_DOC_EXTS.test(fileName);
   }
 
   private static async convertTextToPDF(file: File): Promise<ConversionResult> {
@@ -85,20 +94,18 @@ export class FileConversionService {
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 20;
       const lineHeight = 7;
-      const maxWidth = pageWidth - (margin * 2);
+      const maxWidth = pageWidth - margin * 2;
 
       pdf.setFontSize(11);
       const lines = pdf.splitTextToSize(text, maxWidth);
-
       let y = margin;
 
-      for (let i = 0; i < lines.length; i++) {
+      for (const line of lines) {
         if (y + lineHeight > pageHeight - margin) {
           pdf.addPage();
           y = margin;
         }
-
-        pdf.text(lines[i], margin, y);
+        pdf.text(line, margin, y);
         y += lineHeight;
       }
 
@@ -109,79 +116,71 @@ export class FileConversionService {
         { type: 'application/pdf' }
       );
 
-      return {
-        success: true,
-        file: pdfFile,
-        converted: true
-      };
+      return { success: true, file: pdfFile, converted: true };
     } catch (error) {
       return {
         success: false,
-        error: `Failed to convert "${file.name}" to PDF. The text file may be corrupted or in an unsupported encoding. Error: ${error instanceof Error ? error.message : 'Unknown error'}`
+        error: `Failed to convert "${file.name}" to PDF: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
     }
   }
 
   private static async convertDocumentToPDF(file: File): Promise<ConversionResult> {
     try {
-      if (file.name.toLowerCase().endsWith('.docx') ||
-          file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+      const isDocx = file.name.toLowerCase().endsWith('.docx') ||
+                     file.type === CONVERTIBLE_DOCX_TYPE;
 
-        const mammoth = await import('mammoth');
-        const arrayBuffer = await this.readFileAsArrayBuffer(file);
-        const result = await mammoth.extractRawText({ arrayBuffer });
-
-        if (!result.value) {
-          return {
-            success: false,
-            error: `Unable to extract content from "${file.name}". The document may be empty, password-protected, or corrupted. Please try saving it as a new file or use a different format.`
-          };
-        }
-
-        const pdf = new jsPDF();
-        const pageWidth = pdf.internal.pageSize.getWidth();
-        const pageHeight = pdf.internal.pageSize.getHeight();
-        const margin = 20;
-        const lineHeight = 7;
-        const maxWidth = pageWidth - (margin * 2);
-
-        pdf.setFontSize(11);
-        const lines = pdf.splitTextToSize(result.value, maxWidth);
-
-        let y = margin;
-
-        for (let i = 0; i < lines.length; i++) {
-          if (y + lineHeight > pageHeight - margin) {
-            pdf.addPage();
-            y = margin;
-          }
-
-          pdf.text(lines[i], margin, y);
-          y += lineHeight;
-        }
-
-        const pdfBlob = pdf.output('blob');
-        const pdfFile = new File(
-          [pdfBlob],
-          file.name.replace(/\.[^.]+$/, '.pdf'),
-          { type: 'application/pdf' }
-        );
-
+      if (!isDocx) {
         return {
-          success: true,
-          file: pdfFile,
-          converted: true
+          success: false,
+          unsupported: true,
+          error: `"${file.name}" is an older .doc format that cannot be converted automatically.`,
         };
       }
 
-      return {
-        success: false,
-        error: `The document format of "${file.name}" is not supported for automatic conversion. Supported document formats: DOCX. Please convert to DOCX, PDF, or an image format.`
-      };
+      const mammoth = await import('mammoth');
+      const arrayBuffer = await this.readFileAsArrayBuffer(file);
+      const result = await mammoth.extractRawText({ arrayBuffer });
+
+      if (!result.value) {
+        return {
+          success: false,
+          error: `Unable to extract content from "${file.name}". The document may be empty, password-protected, or corrupted.`,
+        };
+      }
+
+      const pdf = new jsPDF();
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 20;
+      const lineHeight = 7;
+      const maxWidth = pageWidth - margin * 2;
+
+      pdf.setFontSize(11);
+      const lines = pdf.splitTextToSize(result.value, maxWidth);
+      let y = margin;
+
+      for (const line of lines) {
+        if (y + lineHeight > pageHeight - margin) {
+          pdf.addPage();
+          y = margin;
+        }
+        pdf.text(line, margin, y);
+        y += lineHeight;
+      }
+
+      const pdfBlob = pdf.output('blob');
+      const pdfFile = new File(
+        [pdfBlob],
+        file.name.replace(/\.[^.]+$/, '.pdf'),
+        { type: 'application/pdf' }
+      );
+
+      return { success: true, file: pdfFile, converted: true };
     } catch (error) {
       return {
         success: false,
-        error: `Failed to convert "${file.name}" to PDF. The document may be corrupted or in an incompatible format. Error: ${error instanceof Error ? error.message : 'Unknown error'}. Please try re-saving the file or converting it to a supported format.`
+        error: `Failed to convert "${file.name}" to PDF: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
     }
   }
