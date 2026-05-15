@@ -15,11 +15,13 @@ import { BatchProcessing } from '@/components/BatchProcessing';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GraduationCap, Upload, Zap, CheckCircle, Shield, BookOpen, Users } from 'lucide-react';
+import { GraduationCap, Upload, Zap, CircleCheck as CheckCircle, Shield, BookOpen, Users } from 'lucide-react';
 import { OpenAIService } from '@/services/openaiService';
 import { PlagiarismService, PlagiarismResult } from '@/services/plagiarismService';
 import { AIDetectionService, AIDetectionResult } from '@/services/aiDetectionService';
 import { ImageOrientationService } from '@/services/imageOrientationService';
+import { PDFTextExtractService } from '@/services/pdfTextExtractService';
+import { FileConversionService } from '@/services/fileConversionService';
 import { useToast } from '@/hooks/use-toast';
 import heroBackground from '@/assets/hero-background.jpg';
 import digivecLogo from '@/assets/digivec_logo.png';
@@ -51,7 +53,7 @@ const Index = () => {
   const [batchMarkingScheme, setBatchMarkingScheme] = useState<string>('');
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
     { id: 'orientation', label: 'Checking image orientation', status: 'pending' },
-    { id: 'ocr', label: 'Extracting text from image', status: 'pending' },
+    { id: 'ocr', label: 'Extracting text from file', status: 'pending' },
     { id: 'scheme', label: 'Processing marking scheme', status: 'pending' },
     { id: 'plagiarism', label: 'Checking for plagiarism', status: 'pending' },
     { id: 'marking', label: 'Marking student work', status: 'pending' },
@@ -105,11 +107,16 @@ const Index = () => {
     // Reset processing steps
     setProcessingSteps([
       { id: 'orientation', label: 'Checking image orientation', status: 'pending' },
-      { id: 'ocr', label: 'Extracting text from image', status: 'pending' },
+      { id: 'ocr', label: 'Extracting text from file', status: 'pending' },
       { id: 'scheme', label: 'Processing marking scheme', status: 'pending' },
       { id: 'plagiarism', label: 'Checking for plagiarism', status: 'pending' },
       { id: 'marking', label: 'Marking student work', status: 'pending' },
     ]);
+  };
+
+  const isImageFile = (file: File): boolean => {
+    return FileConversionService.isDirectlySupported(file) &&
+      (file.type.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|heic|bmp|tiff|tif|svg)$/i.test(file.name));
   };
 
   const processFile = async (fileIndex: number) => {
@@ -134,71 +141,112 @@ const Index = () => {
     setIsProcessing(true);
     setCurrentProgress(0);
 
-    let imageToProcess = await fileToBase64(file);
+    const fileIsImage = isImageFile(file);
 
-    // Step 1: Check and correct orientation
+    // Step 1: Orientation check — images only
     updateProcessingStep('orientation', 'processing');
-    try {
-      const orientationService = new ImageOrientationService(apiKey);
-      const orientationResponse = await orientationService.checkAndCorrectOrientation(imageToProcess);
+    let imageToProcess = '';
 
-      if (orientationResponse.success && orientationResponse.needsCorrection && orientationResponse.correctedImage) {
-        imageToProcess = orientationResponse.correctedImage;
-        setOrientationCorrected(true);
-        setOriginalOrientation(orientationResponse.originalOrientation || 'unknown');
-        updateProcessingStep('orientation', 'completed');
-        setCurrentProgress(15);
+    if (fileIsImage) {
+      imageToProcess = await fileToBase64(file);
+      try {
+        const orientationService = new ImageOrientationService(apiKey);
+        const orientationResponse = await orientationService.checkAndCorrectOrientation(imageToProcess);
 
-        const confidenceText = orientationResponse.confidence
-          ? ` (${Math.round(orientationResponse.confidence * 100)}% confidence)`
-          : '';
+        if (orientationResponse.success && orientationResponse.needsCorrection && orientationResponse.correctedImage) {
+          imageToProcess = orientationResponse.correctedImage;
+          setOrientationCorrected(true);
+          setOriginalOrientation(orientationResponse.originalOrientation || 'unknown');
 
-        toast({
-          title: "Orientation Corrected",
-          description: `Image was ${orientationResponse.originalOrientation?.replace(/_/g, ' ')} and has been corrected${confidenceText}`,
-        });
+          const confidenceText = orientationResponse.confidence
+            ? ` (${Math.round(orientationResponse.confidence * 100)}% confidence)`
+            : '';
 
-        if (orientationResponse.verificationPassed === false) {
           toast({
-            title: "Verification Warning",
-            description: "Orientation correction may need review. Check OCR results carefully.",
-            variant: "default",
+            title: "Orientation Corrected",
+            description: `Image was ${orientationResponse.originalOrientation?.replace(/_/g, ' ')} and has been corrected${confidenceText}`,
           });
-        }
-      } else {
-        updateProcessingStep('orientation', 'completed');
-        setCurrentProgress(15);
 
-        if (orientationResponse.confidence && orientationResponse.confidence < 0.85) {
+          if (orientationResponse.verificationPassed === false) {
+            toast({
+              title: "Verification Warning",
+              description: "Orientation correction may need review. Check OCR results carefully.",
+              variant: "default",
+            });
+          }
+        } else if (orientationResponse.confidence && orientationResponse.confidence < 0.85) {
           console.log('Orientation check skipped due to low confidence:', orientationResponse.reasoning);
         }
+      } catch (error) {
+        console.error('Orientation Check Error:', error);
       }
-    } catch (error) {
-      console.error('Orientation Check Error:', error);
-      updateProcessingStep('orientation', 'completed');
-      setCurrentProgress(15);
     }
 
-    // Step 2: OCR
+    updateProcessingStep('orientation', 'completed');
+    setCurrentProgress(15);
+
+    // Step 2: Text extraction
     updateProcessingStep('ocr', 'processing');
 
     try {
-      const openaiService = new OpenAIService(apiKey);
-
       setCurrentProgress(35);
-      const ocrResponse = await openaiService.extractTextFromImage(imageToProcess);
-      
-      if (ocrResponse.success && ocrResponse.text) {
-        setOcrText(ocrResponse.text);
+
+      if (fileIsImage) {
+        // Image: send to OpenAI vision OCR
+        const openaiService = new OpenAIService(apiKey);
+        const ocrResponse = await openaiService.extractTextFromImage(imageToProcess);
+
+        if (ocrResponse.success && ocrResponse.text) {
+          setOcrText(ocrResponse.text);
+          updateProcessingStep('ocr', 'completed');
+          setCurrentProgress(50);
+          toast({ title: "OCR Complete", description: "Text extracted successfully from the image" });
+        } else {
+          throw new Error(ocrResponse.error || 'Failed to extract text');
+        }
+      } else if (file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')) {
+        // PDF: extract embedded text with pdfjs
+        const pdfResult = await PDFTextExtractService.extractText(file);
+
+        if (pdfResult.success && pdfResult.text) {
+          setOcrText(pdfResult.text);
+          updateProcessingStep('ocr', 'completed');
+          setCurrentProgress(50);
+          toast({
+            title: "PDF Text Extracted",
+            description: `Extracted text from ${pdfResult.pageCount} page(s)`,
+          });
+        } else {
+          // PDF has no embedded text (scanned) — render first page as image and use OCR
+          toast({
+            title: "Image-Only PDF Detected",
+            description: "This PDF contains scanned pages. Attempting visual OCR...",
+          });
+
+          const pdfImageBase64 = await renderPDFPageToImage(file);
+          if (!pdfImageBase64) throw new Error('Could not render PDF page for OCR. Please convert to an image or text-based PDF.');
+
+          const openaiService = new OpenAIService(apiKey);
+          const ocrResponse = await openaiService.extractTextFromImage(pdfImageBase64);
+
+          if (ocrResponse.success && ocrResponse.text) {
+            setOcrText(ocrResponse.text);
+            updateProcessingStep('ocr', 'completed');
+            setCurrentProgress(50);
+            toast({ title: "OCR Complete", description: "Text extracted from scanned PDF" });
+          } else {
+            throw new Error(ocrResponse.error || 'Failed to extract text from scanned PDF');
+          }
+        }
+      } else {
+        // Other text-based files (should not normally reach here since FileConversionService converts them,
+        // but handle gracefully by reading as plain text)
+        const text = await file.text();
+        if (!text.trim()) throw new Error('No text content found in this file.');
+        setOcrText(text);
         updateProcessingStep('ocr', 'completed');
         setCurrentProgress(50);
-
-        toast({
-          title: "OCR Complete",
-          description: "Text extracted successfully from the image",
-        });
-      } else {
-        throw new Error(ocrResponse.error || 'Failed to extract text');
+        toast({ title: "Text Extracted", description: "File content loaded successfully" });
       }
     } catch (error) {
       console.error('OCR Error:', error);
@@ -211,6 +259,31 @@ const Index = () => {
     } finally {
       setIsProcessing(false);
       setCurrentProgress(100);
+    }
+  };
+
+  const renderPDFPageToImage = async (file: File): Promise<string | null> => {
+    try {
+      const pdfjsLib = await import('pdfjs-dist');
+      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+        'pdfjs-dist/build/pdf.worker.mjs',
+        import.meta.url
+      ).toString();
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const page = await pdf.getPage(1);
+
+      const viewport = page.getViewport({ scale: 2 });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext('2d')!;
+
+      await page.render({ canvasContext: ctx, viewport }).promise;
+      return canvas.toDataURL('image/jpeg', 0.92);
+    } catch {
+      return null;
     }
   };
 
