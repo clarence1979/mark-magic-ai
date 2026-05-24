@@ -30,17 +30,17 @@ export interface MarkingScheme {
   created_by?: string;
 }
 
-export interface BatchJob {
-  id: string;
-  name: string;
-  marking_scheme_id?: string;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
-  total_students: number;
-  processed_students: number;
-  created_at: string;
-  completed_at?: string;
-  error_message?: string;
-  marking_schemes?: MarkingScheme;
+
+export interface QuestionResult {
+  question: string;
+  studentAnswer: string;
+  correctAnswer?: string;
+  maxMarks: number;
+  awardedMarks: number;
+  feedback: string;
+  markingScheme?: string;
+  strengths: string[];
+  improvements: string[];
 }
 
 export interface StudentAssessment {
@@ -54,6 +54,8 @@ export interface StudentAssessment {
   max_score?: number;
   percentage?: number;
   detailed_feedback?: string;
+  question_results?: QuestionResult[];
+  marking_scheme_snapshot?: string;
   ai_detection_score?: number;
   plagiarism_score?: number;
   orientation_corrected: boolean;
@@ -61,4 +63,18 @@ export interface StudentAssessment {
   error_message?: string;
   processed_at?: string;
   created_at: string;
+}
+
+export interface BatchJob {
+  id: string;
+  name: string;
+  class_name?: string;
+  marking_scheme_id?: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  total_students: number;
+  processed_students: number;
+  created_at: string;
+  completed_at?: string;
+  error_message?: string;
+  marking_schemes?: MarkingScheme;
 }

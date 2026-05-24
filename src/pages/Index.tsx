@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuth } from '@/contexts/AuthContext';
 import { LoginScreen } from '@/components/LoginScreen';
@@ -10,8 +10,7 @@ import { MarkingResults } from '@/components/MarkingResults';
 import { PlagiarismResults } from '@/components/PlagiarismResults';
 import { AIDetectionResults } from '@/components/AIDetectionResults';
 import { PrivacyPolicy } from '@/components/PrivacyPolicy';
-import { BatchUpload } from '@/components/BatchUpload';
-import { BatchProcessing } from '@/components/BatchProcessing';
+import { ClassroomMarking } from '@/components/ClassroomMarking';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -49,8 +48,6 @@ const Index = () => {
   const [originalOrientation, setOriginalOrientation] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentProgress, setCurrentProgress] = useState(0);
-  const [batchJobId, setBatchJobId] = useState<string | null>(null);
-  const [batchMarkingScheme, setBatchMarkingScheme] = useState<string>('');
   const [processingSteps, setProcessingSteps] = useState<ProcessingStep[]>([
     { id: 'orientation', label: 'Checking image orientation', status: 'pending' },
     { id: 'ocr', label: 'Extracting text from file', status: 'pending' },
@@ -689,54 +686,18 @@ const Index = () => {
                 <TabsContent value="batch" className="p-4 sm:p-6 mt-0">
                   <div className="space-y-4">
                     <div>
-                      <h3 className="text-lg font-semibold text-primary mb-2">Batch Processing</h3>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Process multiple student assessments at once with a single marking scheme
+                      <h3 className="text-lg font-semibold text-primary mb-2">Class Marking</h3>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Upload all student assessments, define one marking scheme, then mark the entire class at once with consistent, fair grading.
                       </p>
                     </div>
-
-                    <div className="bg-warning/5 border border-warning/20 p-4 rounded-lg">
-                      <div className="flex items-start gap-3">
-                        <Shield className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-                        <div className="space-y-2">
-                          <h4 className="font-semibold text-sm text-warning">Data Storage Notice</h4>
-                          <p className="text-xs text-muted-foreground">
-                            Batch processing stores student data in our secure Australian database (Supabase Sydney region) to facilitate multi-student operations and result exports.
-                            This differs from single assessment mode where no data is stored server-side.
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            All data is encrypted and protected under Australian privacy laws. Schools can request data deletion at any time.
-                            Please review our <Button variant="link" className="h-auto p-0 text-xs" onClick={() => setActiveTab('batch')}>Privacy Policy</Button> before proceeding.
-                          </p>
-                        </div>
-                      </div>
+                    <div className="bg-muted/40 border rounded-lg p-3 flex items-start gap-2">
+                      <Shield className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                      <p className="text-xs text-muted-foreground">
+                        Student data is stored securely in our Australian database (Supabase Sydney). All data is encrypted and protected under Australian privacy laws.
+                      </p>
                     </div>
-
-                    {!batchJobId ? (
-                      <BatchUpload
-                        apiKey={apiKey}
-                        onBatchCreated={(jobId, markingScheme) => {
-                          setBatchJobId(jobId);
-                          setBatchMarkingScheme(markingScheme);
-                          toast({
-                            title: "Batch Ready",
-                            description: "Now upload student assessment files"
-                          });
-                        }}
-                      />
-                    ) : (
-                      <BatchProcessing
-                        batchJobId={batchJobId}
-                        markingSchemeContent={batchMarkingScheme}
-                        apiKey={apiKey}
-                        onComplete={() => {
-                          toast({
-                            title: "All Students Processed",
-                            description: "Export results as CSV or PDF"
-                          });
-                        }}
-                      />
-                    )}
+                    <ClassroomMarking apiKey={apiKey} />
                   </div>
                 </TabsContent>
 
