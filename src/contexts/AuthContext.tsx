@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { attemptAutoLogin as attemptAutoLoginUtil, isInIframe } from '../utils/auto-login';
 
 export interface User {
   username: string;
@@ -31,7 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    attemptAutoLogin();
+    init();
 
     const handleBeforeUnload = () => {
       clearAuthCache();
@@ -45,79 +46,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const isInIframe = () => {
-    try {
-      return window.self !== window.top;
-    } catch (e) {
-      return true;
-    }
-  };
-
-  const attemptAutoLogin = async () => {
+  const init = async () => {
     setIsLoading(true);
 
     if (isInIframe()) {
-      const result = await attemptIframeLogin();
-      if (result.authenticated && result.user) {
-        setUser(result.user);
+      const result = await attemptAutoLoginUtil();
+      if (result.authenticated) {
+        setUser({
+          username: result.username || '',
+          isAdmin: result.isAdmin || false,
+          openaiApiKey: result.apiKey || '',
+        });
         setIsAuthenticated(true);
       }
     }
 
     setIsLoading(false);
-  };
-
-  const attemptIframeLogin = (): Promise<{ authenticated: boolean; user?: User }> => {
-    return new Promise((resolve) => {
-      window.parent.postMessage({ type: 'REQUEST_API_VALUES' }, '*');
-
-      const handleMessage = async (event: MessageEvent) => {
-        if (event.data.type === 'API_VALUES_RESPONSE') {
-          window.removeEventListener('message', handleMessage);
-
-          const { authToken, SUPABASE_URL, SUPABASE_ANON_KEY, OPENAI_API_KEY } = event.data.data;
-
-          if (authToken && SUPABASE_URL && SUPABASE_ANON_KEY) {
-            try {
-              const response = await fetch(
-                `${SUPABASE_URL}/rest/v1/auth_tokens?token=eq.${authToken}&expires_at=gt.${new Date().toISOString()}&select=username,is_admin,expires_at`,
-                {
-                  headers: {
-                    'apikey': SUPABASE_ANON_KEY,
-                    'Content-Type': 'application/json',
-                  }
-                }
-              );
-
-              const tokens = await response.json();
-
-              if (tokens && tokens.length > 0) {
-                resolve({
-                  authenticated: true,
-                  user: {
-                    username: tokens[0].username,
-                    isAdmin: tokens[0].is_admin,
-                    openaiApiKey: OPENAI_API_KEY,
-                  }
-                });
-                return;
-              }
-            } catch (error) {
-              console.error('Token validation failed:', error);
-            }
-          }
-
-          resolve({ authenticated: false });
-        }
-      };
-
-      window.addEventListener('message', handleMessage);
-
-      setTimeout(() => {
-        window.removeEventListener('message', handleMessage);
-        resolve({ authenticated: false });
-      }, 2000);
-    });
   };
 
   const standaloneLogin = async (username: string, password: string): Promise<User> => {
@@ -164,9 +108,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     try {
       if (isInIframe()) {
-        const result = await attemptIframeLogin();
-        if (result.authenticated && result.user) {
-          setUser(result.user);
+        const result = await attemptAutoLoginUtil();
+        if (result.authenticated) {
+          setUser({
+            username: result.username || '',
+            isAdmin: result.isAdmin || false,
+            openaiApiKey: result.apiKey || '',
+          });
           setIsAuthenticated(true);
         } else {
           throw new Error('Authentication failed');
