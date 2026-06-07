@@ -8,7 +8,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
 const REDIRECT_HOSTNAMES = ['pycode.teachingtools.dev', 'marker.teachingtools.dev'];
-if (REDIRECT_HOSTNAMES.includes(window.location.hostname)) {
+const isInIframe = () => { try { return window.self !== window.top; } catch { return true; } };
+if (!isInIframe() && REDIRECT_HOSTNAMES.includes(window.location.hostname)) {
   window.location.replace('https://teachingtools.dev' + window.location.pathname + window.location.search + window.location.hash);
 }
 
