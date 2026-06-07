@@ -1,3 +1,5 @@
+import { resolveModel } from './modelResolver';
+
 interface OrientationCheckResponse {
   success: boolean;
   needsCorrection: boolean;
@@ -18,6 +20,7 @@ export class ImageOrientationService {
 
   async checkAndCorrectOrientation(imageBase64: string): Promise<OrientationCheckResponse> {
     try {
+      const model = await resolveModel(this.apiKey);
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -25,7 +28,7 @@ export class ImageOrientationService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model,
           messages: [
             {
               role: 'user',
@@ -224,6 +227,7 @@ DEFAULT TO "correct" unless you are absolutely certain (confidence > 0.85) the i
     appliedCorrection: string
   ): Promise<boolean> {
     try {
+      const model = await resolveModel(this.apiKey);
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -231,7 +235,7 @@ DEFAULT TO "correct" unless you are absolutely certain (confidence > 0.85) the i
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model,
           messages: [
             {
               role: 'user',

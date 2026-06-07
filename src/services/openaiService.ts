@@ -1,3 +1,5 @@
+import { resolveModel } from './modelResolver';
+
 interface OCRResponse {
   success: boolean;
   text?: string;
@@ -56,6 +58,7 @@ export class OpenAIService {
 
   async extractTextFromImage(imageBase64: string): Promise<OCRResponse> {
     try {
+      const model = await resolveModel(this.apiKey);
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -63,7 +66,7 @@ export class OpenAIService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model,
           messages: [
             {
               role: 'system',
@@ -146,6 +149,7 @@ Begin transcription:`
 
   async generateMarkingScheme(ocrText: string): Promise<SchemeGenerationResponse> {
     try {
+      const model = await resolveModel(this.apiKey);
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -153,7 +157,7 @@ Begin transcription:`
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model,
           messages: [
             {
               role: 'system',
@@ -218,6 +222,7 @@ Format as clear bullet points with specific mark allocations and criteria.`
 
   async markStudentWork(ocrText: string, markingScheme: string): Promise<MarkingResponse> {
     try {
+      const model = await resolveModel(this.apiKey);
       // Preprocess text to identify potential questions
       const questionPatterns = /^[a-z]\.|^\d+\.|^[A-Z]\.|^\([a-z]\)|^\(\d+\)|^Question \d+/gm;
       const potentialQuestions = ocrText.match(questionPatterns);
@@ -230,7 +235,7 @@ Format as clear bullet points with specific mark allocations and criteria.`
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model,
           messages: [
             {
               role: 'system',

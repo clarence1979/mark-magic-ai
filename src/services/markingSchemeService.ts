@@ -1,4 +1,5 @@
 import { OpenAIService } from './openaiService';
+import { resolveModel } from './modelResolver';
 
 export interface MarkingSchemeParseResult {
   success: boolean;
@@ -50,6 +51,7 @@ export class MarkingSchemeService {
 
   async generateMarkingScheme(prompt: string): Promise<MarkingSchemeParseResult> {
     try {
+      const model = await resolveModel(this.apiKey);
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -57,7 +59,7 @@ export class MarkingSchemeService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model,
           messages: [
             {
               role: 'system',
@@ -100,6 +102,7 @@ export class MarkingSchemeService {
 
   private async extractTextFromImage(base64Image: string): Promise<MarkingSchemeParseResult> {
     try {
+      const model = await resolveModel(this.apiKey);
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -107,7 +110,7 @@ export class MarkingSchemeService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model,
           messages: [
             {
               role: 'user',

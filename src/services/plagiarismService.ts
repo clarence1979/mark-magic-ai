@@ -23,6 +23,7 @@ interface PlagiarismCheckResponse {
 }
 
 import { AIDetectionService, AIDetectionResult } from './aiDetectionService';
+import { resolveModel } from './modelResolver';
 
 export class PlagiarismService {
   private apiKey: string;
@@ -43,6 +44,7 @@ export class PlagiarismService {
           aiDetectionResult = aiResponse.result;
         }
       }
+      const model = await resolveModel(this.apiKey);
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -50,7 +52,7 @@ export class PlagiarismService {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model,
           messages: [
             {
               role: 'system',
