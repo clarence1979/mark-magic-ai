@@ -7,6 +7,10 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
+if (window.location.hostname === 'pycode.teachingtools.dev') {
+  window.location.replace('https://teachingtools.dev' + window.location.pathname + window.location.search + window.location.hash);
+}
+
 const queryClient = new QueryClient();
 
 const App = () => (
