@@ -6,7 +6,7 @@ Strict-Transport-Security = "max-age=63072000; includeSubDomains; preload"
 X-Content-Type-Options = "nosniff"
 Referrer-Policy = "strict-origin-when-cross-origin"
 Permissions-Policy = "camera=(), microphone=(), geolocation=()"
-Content-Security-Policy = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://jxcsbzziidmkvzmdmwxm.supabase.co wss://jxcsbzziidmkvzmdmwxm.supabase.co https://api.openai.com https://yihztkqrfxgvvsovpmfu.supabase.co; frame-src https://teachingtools.dev; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self' https://teachingtools.dev"
+Content-Security-Policy = "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://www.paypalobjects.com; font-src 'self' data:; connect-src 'self' https://api.openai.com https://yihztkqrfxgvvsovpmfu.supabase.co; frame-src https://teachingtools.dev; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self' https://teachingtools.dev https://*.teachingtools.dev https://eduai-desktop.netlify.app"
 
 [build]
 command = "npm run build"
