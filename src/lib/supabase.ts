@@ -1,16 +1,28 @@
 import { createClient } from '@supabase/supabase-js';
+import { getPass } from './eduai';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Marking schemes, batches and results are kept in the teachingtools.dev database. Each row
+// belongs to the teachingtools.dev account that made it: requests carry the person's
+// short-lived pass, and the database rules show people only their own rows (teachers see
+// all). The anon key below is public; it opens nothing without a pass.
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://yihztkqrfxgvvsovpmfu.supabase.co';
+const supabaseAnonKey =
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlpaHp0a3FyZnhndnZzb3ZwbWZ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU5ODMwMjAsImV4cCI6MjA3MTU1OTAyMH0.QmqeyNIULbMxwC2jniJXgG2-uPfvBp6Z_MiT7MQLN3Y';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
-}
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: { persistSession: false, autoRefreshToken: false },
+  global: {
+    fetch: async (input: RequestInfo | URL, init?: RequestInit) => {
+      const headers = new Headers(init?.headers);
+      const pass = await getPass();
+      if (pass) headers.set('x-session-token', pass);
+      return fetch(input, { ...init, headers });
+    },
+  },
+});
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// Write access is granted to the anon role via RLS policies.
-// The service_role key must never be bundled in client code.
+// Kept for older callers: the same client (writes are checked by the database rules).
 export const supabaseAdmin = supabase;
 
 export interface MarkingScheme {

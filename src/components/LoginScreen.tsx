@@ -1,91 +1,54 @@
 import { useState } from 'react';
+import { ExternalLink, Loader2, RefreshCw, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import * as eduai from '@/lib/eduai';
 
+// Magic Marker marks handwriting with AI, so it needs a teachingtools.dev sign-in. It never
+// asks for a password: people sign in at teachingtools.dev, and this screen moves on by itself
+// when they come back to the tab (or straight away inside the teachingtools.dev desktop).
 export const LoginScreen = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const [checking, setChecking] = useState(false);
+  const [checked, setChecked] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!username.trim()) {
-      toast.error('Please enter your username');
-      return;
-    }
-
-    if (!password.trim()) {
-      toast.error('Please enter your password');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await login(username, password);
-      toast.success('Login successful');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Login failed');
-    } finally {
-      setIsLoading(false);
-    }
+  const checkAgain = async () => {
+    setChecking(true);
+    await eduai.connect();
+    setChecking(false);
+    setChecked(true);
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-slate-100 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background to-muted p-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-4">
-            <img
-              src="/lovable-uploads/7e0b4f13-f26e-4a45-b777-fdda229a575e.png"
-              alt="Logo"
-              className="h-16 w-auto"
-            />
-          </div>
-          <CardTitle className="text-2xl text-center">Welcome Back</CardTitle>
-          <CardDescription className="text-center">
-            Enter your credentials to access the marking system
+        <CardHeader className="text-center">
+          <CardTitle className="text-2xl">Sign in at teachingtools.dev</CardTitle>
+          <CardDescription>
+            Magic Marker uses AI to read and mark handwriting, so it needs your teachingtools.dev account.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                type="text"
-                placeholder="Enter your username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                disabled={isLoading}
-                autoComplete="username"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-                autoComplete="current-password"
-              />
-            </div>
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Logging in...' : 'Login'}
-            </Button>
-          </form>
+        <CardContent className="space-y-4">
+          <ol className="text-sm text-muted-foreground space-y-1.5 list-decimal list-inside">
+            <li>Open teachingtools.dev and sign in there.</li>
+            <li>Come back to this tab. Magic Marker opens by itself.</li>
+          </ol>
+          <Button type="button" className="w-full" onClick={() => eduai.openSignIn()}>
+            <ExternalLink className="mr-2 h-4 w-4" />
+            Open teachingtools.dev
+          </Button>
+          <Button type="button" variant="ghost" className="w-full" onClick={checkAgain} disabled={checking}>
+            {checking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+            I've signed in. Check again
+          </Button>
+          {checked && (
+            <p className="text-xs rounded-md border border-amber-300 bg-amber-50 text-amber-800 p-2" role="status">
+              No sign-in found yet. Make sure you signed in at teachingtools.dev in this same browser.
+            </p>
+          )}
+          <p className="flex items-start gap-1.5 text-xs text-muted-foreground">
+            <ShieldCheck className="h-3.5 w-3.5 shrink-0 mt-px" />
+            Magic Marker never asks for your password, and no AI key is ever sent to this page.
+          </p>
         </CardContent>
       </Card>
     </div>
